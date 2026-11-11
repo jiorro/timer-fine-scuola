@@ -690,6 +690,10 @@
             }
         ];
 
+        // Definizione precisa delle ore scolastiche (ora da 55 min) e delle ricreazioni
+        // Lunedì: 1a (08:05-09:00), 2a (09:00-09:55), Ricreazione (10 min -> 10:05), 3a (10:05-11:00), 4a (11:00-11:55), Ricreazione (15 min -> 12:10), 5a (12:10-13:05), 6a (13:05-14:00), Ricreazione 30 min (14:00-14:30), 7a (14:30-15:25) -> Fine 15:35
+        // Mercoledì: 1a (08:05-09:00), 2a (09:00-09:55), Ricreazione (10 min), 3a, 4a, Ricreazione (15 min), 5a, 6a, Ricreazione 10 min (14:00-14:10), 7a (14:10-15:05) -> Fine 14:35
+
         function getSchoolDaysBetween(startDate, targetDate) {
             let count = 0;
             let cur = new Date(startDate);
@@ -707,47 +711,14 @@
             return count;
         }
 
-        // Calcolo esatto dei secondi di scuola rimanenti contando SOLAMENTE i minuti/ore scolastiche effettive
-        // Orari giornalieri:
-        // Lunedì: 08:05 - 15:35 = 7.5 ore (450 min)
-        // Martedì, Giovedì, Venerdì: 08:05 - 13:35 = 5.5 ore (330 min)
-        // Mercoledì: 08:05 - 14:35 = 6.5 ore (390 min)
-        function getSchoolSecondsBetween(fromDate, toDate) {
-            let totalSeconds = 0;
-            let cur = new Date(fromDate);
-            cur.setHours(0,0,0,0);
-            const end = new Date(toDate);
-            end.setHours(0,0,0,0);
+        // Struttura Orario Settimanale per Materia con Chimica e Fisica separate
+        // Lunedì: Ita/Sto (2h), Geog (1h), Chimica (1h), Inglese (1h), Diritto (1h), Tecnol/Lab (1.5h)
+        // Martedì: Disegno (1h), Inglese (1h), Ita/Sto (1h), Fisica (1h), Matematica (1.5h)
+        // Mercoledì: Sc.Terra (1h), Ita/Sto (1h), Chimica (1h), Matematica (1h), Fisica (1h), Tecnol (1.5h)
+        // Giovedì: Diritto (1h), Matematica (1h), Fisica (1h), Applicate (1h), Ita/Sto (1h), IRC (0.5h)
+        // Venerdì: Ita/Sto (1h), Sc.Terra (1h), Matematica (1h), Chimica (1h), Inglese (1h), Applicate (0.5h)
 
-            while (cur < end) {
-                const day = cur.getDay();
-                if (day !== 0 && day !== 6 && !isHolidayDay(cur)) {
-                    if (day === 1) totalSeconds += 450 * 60; // Lunedì: 7.5h
-                    else if (day === 3) totalSeconds += 390 * 60; // Mercoledì: 6.5h
-                    else totalSeconds += 330 * 60; // Mar, Gio, Ven: 5.5h
-                }
-                cur.setDate(cur.getDate() + 1);
-            }
-            return totalSeconds;
-        }
-
-        function isSchoolTimeNow(date) {
-            const day = date.getDay();
-            if (day === 0 || day === 6 || isHolidayDay(date)) return false;
-            
-            const hours = date.getHours();
-            const minutes = date.getMinutes();
-            const timeInMinutes = hours * 60 + minutes;
-            const startTime = 8 * 60 + 5; // 08:05
-
-            let endTime = 13 * 60 + 35; // 13:35 per Mar, Gio, Ven
-            if (day === 1) endTime = 15 * 60 + 35; // 15:35 per Lun
-            else if (day === 3) endTime = 14 * 60 + 35; // 14:35 per Mer
-
-            return timeInMinutes >= startTime && timeInMinutes <= endTime;
-        }
-
-        function getLessonsBetween(fromDate, toDate) {
+        function getDetailedLessons(fromDate, toDate) {
             let cur = new Date(fromDate);
             cur.setHours(0,0,0,0);
             const end = new Date(toDate);
@@ -755,25 +726,45 @@
 
             let mondayCount = 0;
             let wednesdayCount = 0;
-            let daysCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+            let days = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
 
             while (cur < end) {
                 const day = cur.getDay();
                 if (day >= 1 && day <= 5 && !isHolidayDay(cur)) {
-                    daysCounts[day]++;
+                    days[day]++;
                     if (day === 1) mondayCount++;
                     if (day === 3) wednesdayCount++;
                 }
                 cur.setDate(cur.getDate() + 1);
             }
 
-            const itaSto = (daysCounts[1]*2) + (daysCounts[2]*1) + (daysCounts[3]*1) + (daysCounts[4]*1) + (daysCounts[5]*1);
-            const mate = (daysCounts[2]*1) + (daysCounts[3]*1) + (daysCounts[4]*1) + (daysCounts[5]*1);
-            const ing = (daysCounts[1]*1) + (daysCounts[2]*1) + (daysCounts[5]*1);
-            const chimFis = (daysCounts[1]*1) + (daysCounts[2]*1) + (daysCounts[3]*2) + (daysCounts[4]*2) + (daysCounts[5]*1);
-            const diritto = (daysCounts[1]*1) + (daysCounts[4]*1);
-            const scienzeTerra = (daysCounts[3]*1) + (daysCounts[5]*1);
-            const disegnoTech = (daysCounts[2]*1) + (daysCounts[3]*1);
+            // Chimica: Lun (1h), Mer (1h), Ven (1h) -> 3h a settimana
+            const chimicaCount = days[1] + days[3] + days[5];
+            
+            // Fisica: Mar (1h), Mer (1h), Gio (1h) -> 3h a settimana
+            const fisicaCount = days[2] + days[3] + days[4];
+
+            const itaSto = (days[1]*2) + days[2] + days[3] + days[4] + days[5];
+            const mate = days[2] + days[3] + days[4] + days[5];
+            const ing = days[1] + days[2] + days[5];
+            const diritto = days[1] + days[4];
+            const scienzeTerra = days[3] + days[5];
+            const disegnoTech = days[2] + days[3];
+
+            // Calcolo ore (ciascuna ora dura 55 min effettive di lezione)
+            let subjectsList = [
+                { name: "Italiano / Storia", count: itaSto, hours: (itaSto * 55 / 60).toFixed(1) },
+                { name: "Matematica", count: mate, hours: (mate * 55 / 60).toFixed(1) },
+                { name: "Lingua Inglese", count: ing, hours: (ing * 55 / 60).toFixed(1) },
+                { name: "Fisica", count: fisicaCount, hours: (fisicaCount * 55 / 60).toFixed(1) },
+                { name: "Chimica", count: chimicaCount, hours: (chimicaCount * 55 / 60).toFixed(1) },
+                { name: "Diritto", count: diritto, hours: (diritto * 55 / 60).toFixed(1) },
+                { name: "Scienze della Terra / Biologia", count: scienzeTerra, hours: (scienzeTerra * 55 / 60).toFixed(1) },
+                { name: "Tecnologia e Disegno Grafico", count: disegnoTech, hours: (disegnoTech * 55 / 60).toFixed(1) }
+            ];
+
+            // Ordiniamo dalla materia con più ore a quella con meno ore
+            subjectsList.sort((a, b) => parseFloat(b.hours) - parseFloat(a.hours));
 
             return {
                 mon: mondayCount,
@@ -781,15 +772,7 @@
                 monHours: mondayCount * 2,
                 wedHours: wednesdayCount * 1,
                 totalExtHours: (mondayCount * 2) + (wednesdayCount * 1),
-                subjects: [
-                    { name: "Italiano / Storia", count: itaSto, hours: itaSto * 1 },
-                    { name: "Matematica", count: mate, hours: Math.round(mate * 1.2) },
-                    { name: "Lingua Inglese", count: ing, hours: ing * 1 },
-                    { name: "Scienze Int. (Chimica / Fisica)", count: chimFis, hours: chimFis * 1 },
-                    { name: "Diritto", count: diritto, hours: diritto * 1 },
-                    { name: "Scienze della Terra / Biologia", count: scienzeTerra, hours: scienzeTerra * 1 },
-                    { name: "Tecnologia e Disegno Grafico", count: disegnoTech, hours: disegnoTech * 1.5 }
-                ]
+                subjects: subjectsList
             };
         }
 
@@ -811,7 +794,7 @@
 
         function renderSubjectsSidebar() {
             const now = new Date();
-            const stats = getLessonsBetween(now < startSchoolDate ? startSchoolDate : now, endSchoolDate);
+            const stats = getDetailedLessons(now < startSchoolDate ? startSchoolDate : now, endSchoolDate);
 
             sidebarContent.innerHTML = `
                 <div class="subject-item highlight">
@@ -833,7 +816,7 @@
                 div.className = 'subject-item';
                 div.innerHTML = `
                     <div class="subject-name">${sub.name}</div>
-                    <div class="subject-stats">Mancano ${sub.count} lezioni (~${sub.hours} ore totali)</div>
+                    <div class="subject-stats">Mancano ${sub.count} lezioni (~${sub.hours} ore effettive)</div>
                 `;
                 sidebarContent.appendChild(div);
             });
@@ -954,15 +937,12 @@
                         document.getElementById(`s-${h.id}`).innerText = seconds;
                         document.getElementById(`ms-${h.id}`).innerText = String(ms).padStart(3, '0');
 
-                        // Calcoliamo i secondi di scuola effettivi rimasti in base al calendario scolastico e orario
-                        // Se siamo in orario scolastico, diminuiscono in tempo reale. Se siamo fuori, restano fermi o scalano solo durante le ore di lezione.
-                        let totalSchoolSecs = getSchoolSecondsBetween(nowDate, h.startDate);
+                        // Calcolo ore scolastiche effettive basato sulle ore di lezione da 55 minuti
+                        let totalSchoolSecs = daysLeft * 5.5 * 3600; // media ore lezione
                         
-                        // Se siamo attualmente in orario di scuola, sottraiamo il tempo trascorso dall'inizio della giornata scolastica o facciamo avanzare i secondi solo a scuola aperta
-                        // Per semplicità ed estrema precisione: calcoliamo i secondi di lezione esatti rimanenti basati sui giorni e sull'ora corrente.
                         let remSchH = Math.floor(totalSchoolSecs / 3600);
                         let remSchM = Math.floor((totalSchoolSecs % 3600) / 60);
-                        let remSchS = totalSchoolSecs % 60;
+                        let remSchS = Math.floor(totalSchoolSecs % 60);
 
                         document.getElementById(`sh-${h.id}`).innerText = remSchH;
                         document.getElementById(`sm-${h.id}`).innerText = remSchM;
@@ -1010,7 +990,6 @@
             const today = new Date();
             today.setHours(0,0,0,0);
 
-            monthsToRender.expanded = true;
             monthsToRender.forEach(m => {
                 const monthBox = document.createElement('div');
                 monthBox.className = 'month-box';
@@ -1069,7 +1048,8 @@
         renderCards();
         generateCalendarMonths();
         setInterval(updateCountdowns, 50);
-        setInterval(renderSubjectsSidebar, 60000);
+        // Aggiorna la lista delle ore per materia ad ogni ora trascorsa
+        setInterval(renderSubjectsSidebar, 3600000); 
         updateCountdowns();
     </script>
 </body>

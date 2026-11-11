@@ -131,7 +131,11 @@
             cursor: pointer;
             z-index: 100;
             font-size: 1.2rem;
-            transition: background 0.2s;
+            transition: background 0.2s, right 0.3s ease-in-out;
+        }
+
+        .sidebar-toggle.open {
+            right: 380px;
         }
 
         .sidebar-toggle:hover {
@@ -183,12 +187,26 @@
             color: var(--text-main);
         }
 
+        .subject-group-title {
+            font-size: 0.75rem;
+            color: var(--accent-orange);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 15px 0 8px 0;
+            font-weight: bold;
+        }
+
         .subject-item {
             background-color: var(--card-bg);
             border: 1px solid var(--card-border);
             border-radius: 2px;
             padding: 12px;
             margin-bottom: 10px;
+        }
+
+        .subject-item.highlight {
+            border-color: var(--accent-orange);
+            background-color: #14161d;
         }
 
         .subject-name {
@@ -425,7 +443,7 @@
             border: 2px solid var(--card-border);
             border-radius: 2px;
             width: 100%;
-            max-width: 750px;
+            max-width: 850px;
             max-height: 90vh;
             overflow-y: auto;
             padding: 25px;
@@ -477,6 +495,7 @@
         .legend-dot.holiday { border: 2px solid var(--accent-red); }
         .legend-dot.weekend { background-color: var(--accent-green); }
         .legend-dot.post-school { background-color: #3b82f6; }
+        .legend-dot.passed { text-decoration: line-through; color: var(--text-secondary); font-weight: bold; }
 
         .calendar-months-grid {
             display: grid;
@@ -539,6 +558,21 @@
             color: #60a5fa;
         }
 
+        /* Cross over passed days */
+        .day-cell.passed {
+            color: #475569;
+            opacity: 0.6;
+        }
+
+        .day-cell.passed::before {
+            content: "✕";
+            position: absolute;
+            color: #ef4444;
+            font-weight: bold;
+            font-size: 0.9rem;
+            line-height: 1;
+        }
+
         @media (max-width: 600px) {
             .countdown-grid {
                 grid-template-columns: repeat(2, 1fr);
@@ -546,6 +580,13 @@
             .top-bar {
                 flex-direction: column;
                 align-items: stretch;
+            }
+            .sidebar-toggle.open {
+                right: 0;
+            }
+            .subjects-sidebar {
+                width: 100%;
+                right: -100%;
             }
         }
     </style>
@@ -566,8 +607,8 @@
         </button>
     </div>
 
-    <!-- Subjects Sidebar Toggle Button -->
-    <button class="sidebar-toggle" onclick="toggleSidebar()" title="Ore Mancanti per Materia">
+    <!-- Subjects Sidebar Toggle Button (Richiudibile con freccia) -->
+    <button class="sidebar-toggle" id="sidebarToggleBtn" onclick="toggleSidebar()" title="Ore e Materie Mancanti">
         ◀
     </button>
 
@@ -575,16 +616,16 @@
     <div class="subjects-sidebar" id="subjectsSidebar">
         <div class="sidebar-header">
             <h2>Ore e Materie Mancanti</h2>
-            <button class="close-sidebar" onclick="toggleSidebar()">×</button>
+            <button class="close-sidebar" onclick="toggleSidebar()">▶</button>
         </div>
         <div id="sidebarContent">
-            <!-- Populated by JS -->
+            <!-- Populated dynamically via JS -->
         </div>
     </div>
 
     <header>
         <h1>Countdown Festività Scolastiche</h1>
-        <p>Anno Scolastico 2026-2027</p>
+        <p>Anno Scolastico 2026-2027 (Dal 10 Settembre 2026 al 7 Giugno 2027)</p>
     </header>
 
     <div class="container" id="cards-container">
@@ -601,7 +642,8 @@
             <div class="calendar-legend">
                 <div class="legend-item"><div class="legend-dot holiday"></div> Festività / Vacanze</div>
                 <div class="legend-item"><div class="legend-dot weekend"></div> Sabato / Domenica</div>
-                <div class="legend-item"><div class="legend-dot post-school"></div> Dopo la fine della scuola</div>
+                <div class="legend-item"><div class="legend-dot post-school"></div> Dopo fine scuola</div>
+                <div class="legend-item"><span style="color:#ef4444; font-weight:bold;">✕</span> Giorni già trascorsi</div>
             </div>
             <div class="calendar-months-grid" id="calendarMonthsGrid">
                 <!-- Populated via JS -->
@@ -610,7 +652,9 @@
     </div>
 
     <script>
-        // Festività con date di inizio e fine
+        const startSchoolDate = new Date(2026, 8, 10); // 10 Settembre 2026
+        const endSchoolDate = new Date(2027, 5, 7);   // 7 Giugno 2027
+
         const holidays = [
             {
                 id: 'imposta',
@@ -618,11 +662,7 @@
                 dateStr: "7 Dicembre 2026",
                 startDate: new Date(2026, 11, 7, 0, 0, 0),
                 endDate: new Date(2026, 11, 7, 23, 59, 59),
-                timestamp: new Date(2026, 11, 7, 8, 5, 0).getTime(),
-                schoolDaysLeft: 17,
-                schoolHoursTotal: 102,
-                schoolMinutesTotal: 6120,
-                schoolSecondsTotal: 367200
+                timestamp: new Date(2026, 11, 7, 8, 5, 0).getTime()
             },
             {
                 id: 'natale',
@@ -630,11 +670,7 @@
                 dateStr: "24 Dicembre 2026 - 5 Gennaio 2027",
                 startDate: new Date(2026, 11, 24, 0, 0, 0),
                 endDate: new Date(2027, 0, 5, 23, 59, 59),
-                timestamp: new Date(2026, 11, 24, 8, 5, 0).getTime(),
-                schoolDaysLeft: 30,
-                schoolHoursTotal: 180,
-                schoolMinutesTotal: 10800,
-                schoolSecondsTotal: 648000
+                timestamp: new Date(2026, 11, 24, 8, 5, 0).getTime()
             },
             {
                 id: 'carnevale',
@@ -642,11 +678,7 @@
                 dateStr: "8 Febbraio - 10 Febbraio 2027",
                 startDate: new Date(2027, 1, 8, 0, 0, 0),
                 endDate: new Date(2027, 1, 10, 23, 59, 59),
-                timestamp: new Date(2027, 1, 8, 8, 5, 0).getTime(),
-                schoolDaysLeft: 60,
-                schoolHoursTotal: 360,
-                schoolMinutesTotal: 21600,
-                schoolSecondsTotal: 1296000
+                timestamp: new Date(2027, 1, 8, 8, 5, 0).getTime()
             },
             {
                 id: 'pasqua',
@@ -654,11 +686,7 @@
                 dateStr: "25 Marzo - 30 Marzo 2027",
                 startDate: new Date(2027, 2, 25, 0, 0, 0),
                 endDate: new Date(2027, 2, 30, 23, 59, 59),
-                timestamp: new Date(2027, 2, 25, 8, 5, 0).getTime(),
-                schoolDaysLeft: 95,
-                schoolHoursTotal: 570,
-                schoolMinutesTotal: 34200,
-                schoolSecondsTotal: 2052000
+                timestamp: new Date(2027, 2, 25, 8, 5, 0).getTime()
             },
             {
                 id: 'aprile',
@@ -666,11 +694,7 @@
                 dateStr: "29 Aprile - 30 Aprile 2027",
                 startDate: new Date(2027, 3, 29, 0, 0, 0),
                 endDate: new Date(2027, 3, 30, 23, 59, 59),
-                timestamp: new Date(2027, 3, 29, 8, 5, 0).getTime(),
-                schoolDaysLeft: 120,
-                schoolHoursTotal: 720,
-                schoolMinutesTotal: 43200,
-                schoolSecondsTotal: 2592000
+                timestamp: new Date(2027, 3, 29, 8, 5, 0).getTime()
             },
             {
                 id: 'repubblica',
@@ -678,11 +702,7 @@
                 dateStr: "2 Giugno 2027",
                 startDate: new Date(2027, 5, 2, 0, 0, 0),
                 endDate: new Date(2027, 5, 2, 23, 59, 59),
-                timestamp: new Date(2027, 5, 2, 8, 5, 0).getTime(),
-                schoolDaysLeft: 145,
-                schoolHoursTotal: 870,
-                schoolMinutesTotal: 52200,
-                schoolSecondsTotal: 3132000
+                timestamp: new Date(2027, 5, 2, 8, 5, 0).getTime()
             },
             {
                 id: 'fine',
@@ -690,41 +710,131 @@
                 dateStr: "7 Giugno 2027",
                 startDate: new Date(2027, 5, 7, 0, 0, 0),
                 endDate: new Date(2027, 5, 7, 23, 59, 59),
-                timestamp: new Date(2027, 5, 7, 8, 5, 0).getTime(),
-                schoolDaysLeft: 150,
-                schoolHoursTotal: 900,
-                schoolMinutesTotal: 54000,
-                schoolSecondsTotal: 3240000
+                timestamp: new Date(2027, 5, 7, 8, 5, 0).getTime()
             }
         ];
 
-        // Dati materie e ore di prolungamento basati sull'orario scolastico
-        const subjectsData = [
-            { name: "Italiano / Storia", lessonsLeft: 42, hours: "84h" },
-            { name: "Matematica", lessonsLeft: 35, hours: "70h" },
-            { name: "Lingua Inglese", lessonsLeft: 24, hours: "48h" },
-            { name: "Sc. Int. (Chimica / Fisica)", lessonsLeft: 28, hours: "56h" },
-            { name: "Diritto", lessonsLeft: 12, hours: "24h" },
-            { name: "Sc. e Tecnol. Applicate", lessonsLeft: 16, hours: "32h" },
-            { name: "Tecn. e rappres. grafica", lessonsLeft: 14, hours: "28h" },
-            { name: "Sc. Sp. (Scienze Terra/Biol.)", lessonsLeft: 12, hours: "24h" },
-            { name: "Religione (IRC)", lessonsLeft: 10, hours: "10h" },
-            { name: "Rientri Pomeridiani (Lunedì)", lessonsLeft: 8, hours: "12h (Pomeriggio)" },
-            { name: "Rientri Pomeridiani (Mercoledì)", lessonsLeft: 6, hours: "9h (Pomeriggio)" },
-            { name: "Totale Ore di Prolungamento", lessonsLeft: 14, hours: "21h Totali" }
-        ];
+        // Definizione orari settimanali delle materie
+        // Lunedì (7.5h): Ita/Sto (2h), Geog (1h), Chimica (1h), Inglese (1h), Diritto (1h), Prolungamento/Lab/Tecn (1.5h)
+        // Martedì (5.5h): Disegno (1h), Inglese (1h), Ita/Sto (1h), Fisica (1h), Matematica (1h.5)
+        // Mercoledì (6.5h): Sc.Terra (1h), Ita/Sto (1h), Chimica (1h), Matematica (1h), Fisica (1h), Tecnol (1.5h - Prolungamento)
+        // Giovedì (5.5h): Diritto (1h), Matematica (1h), Fisica (1h), Applicate (1h), Ita/Sto (1h), IRC (0.5h)
+        // Venerdì (5.5h): Ita/Sto (1h), Sc.Terra (1h), Matematica (1h), Chimica (1h), Inglese (1h), Applicate (0.5h)
+
+        function getSchoolDaysBetween(startDate, targetDate) {
+            let count = 0;
+            let cur = new Date(startDate);
+            cur.setHours(0,0,0,0);
+            const end = new Date(targetDate);
+            end.setHours(0,0,0,0);
+
+            while (cur < end) {
+                const day = cur.getDay();
+                if (day !== 0 && day !== 6 && !isHolidayDay(cur)) {
+                    count++;
+                }
+                cur.setDate(cur.getDate() + 1);
+            }
+            return count;
+        }
+
+        function getLessonsBetween(fromDate, toDate) {
+            let cur = new Date(fromDate);
+            cur.setHours(0,0,0,0);
+            const end = new Date(toDate);
+            end.setHours(0,0,0,0);
+
+            let mondayCount = 0;
+            let wednesdayCount = 0;
+            let daysCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+
+            while (cur < end) {
+                const day = cur.getDay();
+                if (day >= 1 && day <= 5 && !isHolidayDay(cur)) {
+                    daysCounts[day]++;
+                    if (day === 1) mondayCount++;
+                    if (day === 3) wednesdayCount++;
+                }
+                cur.setDate(cur.getDate() + 1);
+            }
+
+            // Calcolo materie e ore in base ai giorni rimasti
+            const itaSto = (daysCounts[1]*2) + (daysCounts[2]*1) + (daysCounts[3]*1) + (daysCounts[4]*1) + (daysCounts[5]*1);
+            const mate = (daysCounts[2]*1) + (daysCounts[3]*1) + (daysCounts[4]*1) + (daysCounts[5]*1);
+            const ing = (daysCounts[1]*1) + (daysCounts[2]*1) + (daysCounts[5]*1);
+            const chimFis = (daysCounts[1]*1) + (daysCounts[2]*1) + (daysCounts[3]*2) + (daysCounts[4]*2) + (daysCounts[5]*1);
+            const diritto = (daysCounts[1]*1) + (daysCounts[4]*1);
+            const scienzeTerra = (daysCounts[3]*1) + (daysCounts[5]*1);
+            const disegnoTech = (daysCounts[2]*1) + (daysCounts[3]*1);
+
+            return {
+                mon: mondayCount,
+                wed: wednesdayCount,
+                monHours: mondayCount * 2, // 2h di rientro lunedì
+                wedHours: wednesdayCount * 1, // 1h di rientro mercoledì
+                totalExtHours: (mondayCount * 2) + (wednesdayCount * 1),
+                subjects: [
+                    { name: "Italiano / Storia", count: itaSto, hours: itaSto * 1 },
+                    { name: "Matematica", count: mate, hours: Math.round(mate * 1.2) },
+                    { name: "Lingua Inglese", count: ing, hours: ing * 1 },
+                    { name: "Scienze Int. (Chimica / Fisica)", count: chimFis, hours: chimFis * 1 },
+                    { name: "Diritto", count: diritto, hours: diritto * 1 },
+                    { name: "Scienze della Terra / Biologia", count: scienzeTerra, hours: scienzeTerra * 1 },
+                    { name: "Tecnologia e Disegno Grafico", count: disegnoTech, hours: disegnoTech * 1.5 }
+                ]
+            };
+        }
+
+        function isHolidayDay(date) {
+            const y = date.getFullYear();
+            const m = date.getMonth();
+            const d = date.getDate();
+            // Ponte Immacolata
+            if (y === 2026 && m === 11 && d === 7) return true;
+            // Natale (24 Dic 2026 - 5 Gen 2027)
+            if ((y === 2026 && m === 11 && d >= 24) || (y === 2027 && m === 0 && d <= 5)) return true;
+            // Carnevale (8-10 Feb 2027)
+            if (y === 2027 && m === 1 && (d >= 8 && d <= 10)) return true;
+            // Pasqua (25-30 Mar 2027)
+            if (y === 2027 && m === 2 && (d >= 25 && d <= 30)) return true;
+            // Aprile (29-30 Apr 2027)
+            if (y === 2027 && m === 3 && (d >= 29 && d <= 30)) return true;
+            // Festa Repubblica (2 Giu 2027)
+            if (y === 2027 && m === 5 && d === 2) return true;
+            return false;
+        }
 
         const container = document.getElementById('cards-container');
         const sidebarContent = document.getElementById('sidebarContent');
 
         function renderSubjectsSidebar() {
-            sidebarContent.innerHTML = '';
-            subjectsData.forEach(sub => {
+            const now = new Date();
+            const stats = getLessonsBetween(now < startSchoolDate ? startSchoolDate : now, endSchoolDate);
+
+            sidebarContent.innerHTML = `
+                <div class="subject-group-title">🔥 RIENTRI POMERIDIANI IN CIMA</div>
+                <div class="subject-item highlight">
+                    <div class="subject-name">Rientri del Lunedì</div>
+                    <div class="subject-stats">Mancano ${stats.mon} rientri (${stats.monHours} ore pomeridiane)</div>
+                </div>
+                <div class="subject-item highlight">
+                    <div class="subject-name">Rientri del Mercoledì</div>
+                    <div class="subject-stats">Mancano ${stats.wed} rientri (${stats.wedHours} ore pomeridiane)</div>
+                </div>
+                <div class="subject-item highlight" style="border-color: var(--accent-glow);">
+                    <div class="subject-name">TOTALE ORE DI PROLUNGAMENTO</div>
+                    <div class="subject-stats" style="color: var(--accent-glow); font-weight: bold;">${stats.totalExtHours} Ore di prolungamento rimaste</div>
+                </div>
+
+                <div class="subject-group-title">📚 ORE MANCANTI PER MATERIA</div>
+            `;
+
+            stats.subjects.forEach(sub => {
                 const div = document.createElement('div');
                 div.className = 'subject-item';
                 div.innerHTML = `
                     <div class="subject-name">${sub.name}</div>
-                    <div class="subject-stats">Mancano: ${sub.lessonsLeft} lezioni (${sub.hours})</div>
+                    <div class="subject-stats">Mancano ${sub.count} lezioni (~${sub.hours} ore totali)</div>
                 `;
                 sidebarContent.appendChild(div);
             });
@@ -732,7 +842,14 @@
 
         window.toggleSidebar = function() {
             const sidebar = document.getElementById('subjectsSidebar');
+            const toggleBtn = document.getElementById('sidebarToggleBtn');
             sidebar.classList.toggle('open');
+            toggleBtn.classList.toggle('open');
+            if (sidebar.classList.contains('open')) {
+                toggleBtn.innerText = '▶';
+            } else {
+                toggleBtn.innerText = '◀';
+            }
         }
 
         function renderCards() {
@@ -772,7 +889,7 @@
                         <div class="countdown-section" style="margin-top: 15px;">
                             <div class="section-title">Giorni di Scuola Mancanti</div>
                             <div class="school-days-box" id="sd-${h.id}">
-                                ${h.schoolDaysLeft} GIORNI DI LEZIONE
+                                0 GIORNI DI LEZIONE
                             </div>
                         </div>
                         <div class="countdown-section" style="margin-top: 15px;">
@@ -807,15 +924,20 @@
 
         function updateCountdowns() {
             const now = Date.now();
+            const nowDate = new Date();
             let activeHolidayToday = null;
 
             holidays.forEach(h => {
                 const diff = h.timestamp - now;
                 
-                // Controlla se oggi è il giorno della festività
-                const nowDate = new Date();
                 if (nowDate >= h.startDate && nowDate <= h.endDate) {
                     activeHolidayToday = h.name;
+                }
+
+                const daysLeft = getSchoolDaysBetween(nowDate < startSchoolDate ? startSchoolDate : nowDate, h.startDate);
+                const sdEl = document.getElementById(`sd-${h.id}`);
+                if (sdEl) {
+                    sdEl.innerText = `${daysLeft} GIORNI DI LEZIONE`;
                 }
 
                 if (diff > 0) {
@@ -833,10 +955,9 @@
                         document.getElementById(`s-${h.id}`).innerText = seconds;
                         document.getElementById(`ms-${h.id}`).innerText = String(ms).padStart(3, '0');
 
-                        const totalDuration = h.timestamp - new Date(2026, 10, 11, 8, 5, 0).getTime();
-                        const ratio = Math.max(0, Math.min(1, diff / totalDuration));
-
-                        const remSchoolSec = Math.floor(h.schoolSecondsTotal * ratio);
+                        // Stima dinamica ore di lezione scolastiche effettive fino a questa festività
+                        const estimatedSchoolHours = daysLeft * 6; 
+                        const remSchoolSec = Math.floor(estimatedSchoolHours * 3600 * (diff / (days * 86400000 || 1)));
                         const remSchH = Math.floor(remSchoolSec / 3600);
                         const remSchM = Math.floor((remSchoolSec % 3600) / 60);
                         const remSchS = remSchoolSec % 60;
@@ -857,7 +978,6 @@
                 }
             });
 
-            // Gestione banner festività in corso oggi in alto
             const banner = document.getElementById('activeBanner');
             const bannerName = document.getElementById('activeHolidayName');
             if (activeHolidayToday) {
@@ -868,30 +988,14 @@
             }
         }
 
-        // Calendar Modal Generation
-        const holidayDatesSet = new Set([
-            // Dicembre 2026: 7, 24-31
-            '2026-11-7', '2026-11-24', '2026-11-25', '2026-11-26', '2026-11-27', '2026-11-28', '2026-11-29', '2026-11-30', '2026-11-31', // (mese indicizzato 0-11)
-            // Gennaio 2027: 1-5
-            '2027-0-1', '2027-0-2', '2027-0-3', '2027-0-4', '2027-0-5',
-            // Febbraio 2027: 8-10
-            '2027-1-8', '2027-1-9', '2027-1-10',
-            // Marzo 2027: 25-30
-            '2027-2-25', '2027-2-26', '2027-2-27', '2027-2-28', '2027-2-29', '2027-2-30',
-            // Aprile 2027: 29-30
-            '2027-3-29', '2027-3-30',
-            // Giugno 2027: 2, 7+
-            '2027-5-2', '2027-5-7'
-        ]);
-
-        const schoolEndDate = new Date(2027, 5, 7); // 7 Giugno 2027
-
+        // Generazione del Calendario Scolastico completo dall'inizio della scuola (Settembre 2026)
         function generateCalendarMonths() {
             const grid = document.getElementById('calendarMonthsGrid');
             grid.innerHTML = '';
 
-            // Mesi da Novembre 2026 a Giugno 2027
             const monthsToRender = [
+                { year: 2026, month: 8, name: "Settembre 2026" },
+                { year: 2026, month: 9, name: "Ottobre 2026" },
                 { year: 2026, month: 10, name: "Novembre 2026" },
                 { year: 2026, month: 11, name: "Dicembre 2026" },
                 { year: 2027, month: 0, name: "Gennaio 2027" },
@@ -901,6 +1005,9 @@
                 { year: 2027, month: 4, name: "Maggio 2027" },
                 { year: 2027, month: 5, name: "Giugno 2027" }
             ];
+
+            const today = new Date();
+            today.setHours(0,0,0,0);
 
             monthsToRender.forEach(m => {
                 const monthBox = document.createElement('div');
@@ -913,29 +1020,31 @@
                 const firstDay = new Date(m.year, m.month, 1);
                 const lastDay = new Date(m.year, m.month + 1, 0);
                 
-                // Giorno della settimana (0 = Lunedì se aggiustiamo, in JS 0=Dom)
                 let startDayOfWeek = firstDay.getDay() - 1;
-                if (startDayOfWeek === -1) startDayOfWeek = 6; // Domenica diventa 6
+                if (startDayOfWeek === -1) startDayOfWeek = 6;
 
-                // Spazi vuoti iniziali
                 for (let i = 0; i < startDayOfWeek; i++) {
                     html += `<div></div>`;
                 }
 
                 for (let day = 1; day <= lastDay.getDate(); day++) {
                     const currentDate = new Date(m.year, m.month, day);
-                    const dayOfWeek = currentDate.getDay(); // 0 = Dom, 6 = Sab
-                    const dateKey = `${m.year}-${m.month}-${day}`;
-
+                    const dayOfWeek = currentDate.getDay();
+                    
                     let classes = ['day-cell'];
                     if (dayOfWeek === 0 || dayOfWeek === 6) {
                         classes.push('weekend');
                     }
-                    if (holidayDatesSet.has(dateKey)) {
+                    if (isHolidayDay(currentDate)) {
                         classes.push('holiday-circle');
                     }
-                    if (currentDate > schoolEndDate) {
+                    if (currentDate > endSchoolDate) {
                         classes.push('post-school');
+                    }
+
+                    // Segna con una X sopra i giorni passati
+                    if (currentDate < today) {
+                        classes.push('passed');
                     }
 
                     html += `<div class="${classes.join(' ')}">${day}</div>`;
@@ -959,6 +1068,7 @@
         renderCards();
         generateCalendarMonths();
         setInterval(updateCountdowns, 50);
+        setInterval(renderSubjectsSidebar, 60000); // Aggiorna sidebar ogni minuto col passare del tempo
         updateCountdowns();
     </script>
 </body>

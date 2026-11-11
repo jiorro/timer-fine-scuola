@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Countdown Vacanze Scolastiche</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome per Icone -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                        },
+                        dark: {
+                            bg: '#0b0f19',
+                            card: '#161e2e',
+                            border: '#2a3447',
+                            accent: '#38bdf8'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0b0f19;
+            color: #f3f4f6;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        /* Toggle switch custom styling */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 52px;
+            height: 28px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #2a3447;
+            transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 34px;
+            border: 1px solid #374151;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: #9ca3af;
+            transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #6366f1;
+            border-color: #818cf8;
+            box-shadow: 0 0 12px rgba(99, 102, 241, 0.5);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+            background-color: #ffffff;
+        }
+
+        /* Accordion transition */
+        .content-panel {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease-out, opacity 0.3s ease-out;
+            opacity: 0;
+        }
+
+        .content-panel.open {
+            max-height: 500px;
+            opacity: 1;
+        }
+
+        /* Glassmorphism effects */
+        .glass-card {
+            background: rgba(22, 30, 46, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-card:hover {
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        /* Digit box styling */
+        .digit-box {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-12 antialiased selection:bg-brand-500 selection:text-white">
+
+    <!-- Header Section -->
+    <header class="relative border-b border-gray-800 bg-dark-bg/80 backdrop-filter backdrop-blur-lg sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-400 flex items-center justify-center shadow-lg shadow-brand-500/30">
+                    <i class="fa-solid me-0 fa-graduation-cap text-white text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+                        Countdown Festività
+                        <span class="text-xs bg-brand-500/20 text-brand-500 px-2.5 py-0.5 rounded-full border border-brand-500/30 font-semibold">2026-2027</span>
+                    </h1>
+                    <p class="text-xs text-gray-400">Contatore tempo reale e ore di lezione mancanti</p>
+                </div>
+            </div>
+            <!-- Live Clock Badge -->
+            <div class="hidden sm:flex items-center space-x-2 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-gray-800 font-mono text-xs text-gray-300">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span id="current-time-display">00:00:00</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+
+        <!-- Schedule Summary Banner -->
+        <div class="mb-8 p-4 rounded-2xl glass-card flex flex-col md:flex-row items-center justify-between gap-4 border border-indigo-500/20">
+            <div class="flex items-center gap-3">
+                <div class="p-3 bg-indigo-500/10 rounded-xl text-indigo-400">
+                    <i class="fa-solid fa-clock-rotate-left text-xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-sm font-semibold text-gray-200">Orario di Lezione Settimanale Configurato</h2>
+                    <p class="text-xs text-gray-400 mt-0.5">Lun 8:05-15:35 | Mar, Gio, Ven 8:05-13:35 | Mer 8:05-14:35</p>
+                </div>
+            </div>
+            <div class="flex gap-2 text-xs font-mono text-gray-400 bg-slate-900/60 p-2 rounded-lg border border-gray-800">
+                <span>Sabato e Domenica: <strong>OFF</strong></span>
+            </div>
+        </div>
+
+        <!-- Holidays Countdowns List -->
+        <div class="space-y-4" id="holidays-container">
+            <!-- Dynamic content injected via JavaScript -->
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="max-w-4xl mx-auto px-4 text-center text-xs text-gray-500 py-6">
+        <p>Calcoli basati sull'orologio di sistema del tuo dispositivo.</p>
+        <p class="mt-1">Fine anno scolastico impostata per il 7 Giugno 2027.</p>
+    </footer>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        /**
+         * Definition of School Schedule
+         * 0 = Sunday, 1 = Monday, 2 = Tuesday, 3 = Wednesday, 4 = Thursday, 5 = Friday, 6 = Saturday
+         */
+        const SCHOOL_SCHEDULE = {
+            1: { start: { h: 8, m: 5 }, end: { h: 15, m: 35 } }, // Monday: 7h 30m
+            2: { start: { h: 8, m: 5 }, end: { h: 13, m: 35 } }, // Tuesday: 5h 30m
+            3: { start: { h: 8, m: 5 }, end: { h: 14, m: 35 } }, // Wednesday: 6h 30m
+            4: { start: { h: 8, m: 5 }, end: { h: 13, m: 35 } }, // Thursday: 5h 30m
+            5: { start: { h: 8, m: 5 }, end: { h: 13, m: 35 } }, // Friday: 5h 30m
+            0: null, // Sunday
+            6: null  // Saturday
+        };
+
+        /**
+         * Holidays List based on School Calendar
+         * Target Date is set to 08:05 AM of the holiday start date.
+         */
+        const HOLIDAYS = [
+            {
+                id: 'imacolata',
+                title: 'Ponte dell\'Immacolata',
+                dateStr: '7 Dicembre 2026',
+                target: new Date('2026-12-07T08:05:00'),
+                icon: 'fa-snowflake',
+                badge: '1 Giorno'
+            },
+            {
+                id: 'natale',
+                title: 'Vacanze Natalizie',
+                dateStr: '24 Dicembre 2026 - 5 Gennaio 2027',
+                target: new Date('2026-12-24T08:05:00'),
+                icon: 'fa-tree',
+                badge: '13 Giorni'
+            },
+            {
+                id: 'carnevale',
+                title: 'Carnevale e Mercoledì delle Ceneri',
+                dateStr: '8 Febbraio 2027 - 10 Febbraio 2027',
+                target: new Date('2027-02-08T08:05:00'),
+                icon: 'fa-masks-theater',
+                badge: '3 Giorni'
+            },
+            {
+                id: 'pasqua',
+                title: 'Vacanze Pasquali',
+                dateStr: '25 Marzo 2027 - 30 Marzo 2027',
+                target: new Date('2027-03-25T08:05:00'),
+                icon: 'fa-egg',
+                badge: '6 Giorni'
+            },
+            {
+                id: 'primo-maggio',
+                title: 'Ponte Festa del Lavoro',
+                dateStr: '29 Aprile 2027 - 30 Aprile 2027',
+                target: new Date('2027-04-29T08:05:00'),
+                icon: 'fa-toolbox',
+                badge: '2 Giorni'
+            },
+            {
+                id: 'festa-repubblica',
+                title: 'Festa della Repubblica',
+                dateStr: '2 Giugno 2027',
+                target: new Date('2027-06-02T08:05:00'),
+                icon: 'fa-flag',
+                badge: '1 Giorno'
+            },
+            {
+                id: 'fine-scuola',
+                title: 'Fine delle Lezioni 🥳',
+                dateStr: '7 Giugno 2027',
+                target: new Date('2027-06-07T13:35:00'),
+                icon: 'fa-graduation-cap',
+                badge: 'Traguardo Finale'
+            }
+        ];
+
+        // State to track open toggles
+        const openPanels = {};
+
+        /**
+         * Check if a specific date is a holiday date
+         */
+        function isHolidayDate(date) {
+            const current = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+            
+            // Define holiday date ranges
+            const holidayRanges = [
+                { start: new Date(2026, 11, 7), end: new Date(2026, 11, 7) }, // Dec 7
+                { start: new Date(2026, 11, 24), end: new Date(2027, 0, 5) }, // Dec 24 - Jan 5
+                { start: new Date(2027, 1, 8), end: new Date(2027, 1, 10) }, // Feb 8 - Feb 10
+                { start: new Date(2027, 2, 25), end: new Date(2027, 2, 30) }, // Mar 25 - Mar 30
+                { start: new Date(2027, 3, 29), end: new Date(2027, 3, 30) }, // Apr 29 - Apr 30
+                { start: new Date(2027, 5, 2), end: new Date(2027, 5, 2) }    // Jun 2
+            ];
+
+            return holidayRanges.some(range => current >= range.start && current <= range.end);
+        }
+
+        /**
+         * Calculates precise remaining actual school time in milliseconds
+         */
+        function calculateRemainingSchoolMs(now, targetDate) {
+            if (now >= targetDate) return 0;
+
+            let totalSchoolMs = 0;
+            let current = new Date(now.getTime());
+
+            // Iterate minute by minute or per day block for efficiency
+            while (current < targetDate) {
+                const dayOfWeek = current.getDay();
+                const schedule = SCHOOL_SCHEDULE[dayOfWeek];
+
+                // If school day and not an official holiday
+                if (schedule && !isHolidayDate(current)) {
+                    const startToday = new Date(current);
+                    startToday.setHours(schedule.start.h, schedule.start.m, 0, 0);
+
+                    const endToday = new Date(current);
+                    endToday.setHours(schedule.end.h, schedule.end.m, 0, 0);
+
+                    // Check overlap between [current, targetDate] and [startToday, endToday]
+                    const overlapStart = new Date(Math.max(current.getTime(), startToday.getTime()));
+                    const overlapEnd = new Date(Math.min(targetDate.getTime(), endToday.getTime()));
+
+                    if (overlapStart < overlapEnd) {
+                        totalSchoolMs += (overlapEnd.getTime() - overlapStart.getTime());
+                    }
+                }
+
+                // Move to start of next day
+                current.setDate(current.getDate() + 1);
+                current.setHours(0, 0, 0, 0);
+            }
+
+            return totalSchoolMs;
+        }
+
+        /**
+         * Renders HTML structure for cards
+         */
+        function initDOM() {
+            const container = document.getElementById('holidays-container');
+            container.innerHTML = '';
+
+            const now = new Date();
+
+            // Filter out past holidays if required, or keep all sorted
+            HOLIDAYS.forEach((holiday) => {
+                const isPast = now > holiday.target;
+
+                const card = document.createElement('div');
+                card.className = `rounded-2xl glass-card transition-all duration-300 overflow-hidden ${isPast ? 'opacity-50' : ''}`;
+                card.id = `card-${holiday.id}`;
+
+                card.innerHTML = `
+                    <div class="p-5 flex items-center justify-between cursor-pointer select-none" onclick="toggleAccordion('${holiday.id}')">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-12 h-12 rounded-xl bg-slate-800/80 border border-gray-700/60 flex items-center justify-center text-brand-500 shadow-inner">
+                                <i class="fa-solid ${holiday.icon} text-xl"></i>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <h3 class="font-bold text-gray-100 text-base sm:text-lg">${holiday.title}</h3>
+                                    <span class="text-[10px] bg-slate-800 text-gray-400 px-2 py-0.5 rounded border border-gray-700 font-mono">${holiday.badge}</span>
+                                </div>
+                                <p class="text-xs text-gray-400 mt-0.5 flex items-center gap-1.5">
+                                    <i class="fa-regular fa-calendar text-gray-500"></i> ${holiday.dateStr}
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center space-x-4">
+                            <!-- Toggle switch zipper style -->
+                            <label class="switch" onclick="event.stopPropagation()">
+                                <input type="checkbox" id="toggle-${holiday.id}" onchange="toggleAccordion('${holiday.id}')">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Expandable Details Area -->
+                    <div id="panel-${holiday.id}" class="content-panel border-t border-gray-800/80 bg-slate-950/40">
+                        <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-6">
+                            
+                            <!-- 1. Real Solar Time Countdown -->
+                            <div class="space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-semibold text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
+                                        <i class="fa-solid fa-earth-americas"></i> Tempo Solare Totale
+                                    </span>
+                                    <span class="text-[10px] text-gray-500">(24h/24h)</span>
+                                </div>
+                                <div class="grid grid-cols-5 gap-1.5 text-center font-mono" id="solar-${holiday.id}">
+                                    <div class="digit-box p-2 rounded-lg">
+                                        <div class="text-lg sm:text-xl font-bold text-white val-days">00</div>
+                                        <div class="text-[9px] text-gray-400 uppercase">Giorni</div>
+                                    </div>
+                                    <div class="digit-box p-2 rounded-lg">
+                                        <div class="text-lg sm:text-xl font-bold text-white val-hours">00</div>
+                                        <div class="text-[9px] text-gray-400 uppercase">Ore</div>
+                                    </div>
+                                    <div class="digit-box p-2 rounded-lg">
+                                        <div class="text-lg sm:text-xl font-bold text-white val-mins">00</div>
+                                        <div class="text-[9px] text-gray-400 uppercase">Min</div>
+                                    </div>
+                                    <div class="digit-box p-2 rounded-lg">
+                                        <div class="text-lg sm:text-xl font-bold text-white val-secs">00</div>
+                                        <div class="text-[9px] text-gray-400 uppercase">Sec</div>
+                                    </div>
+                                    <div class="digit-box p-2 rounded-lg bg-indigo-950/30 border-indigo-500/20">
+                                        <div class="text-lg sm:text-xl font-bold text-brand-500 val-ms">000</div>
+                                        <div class="text-[9px] text-brand-500/80 uppercase">ms</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 2. Actual School Hours Countdown -->
+                            <div class="space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-semibold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+                                        <i class="fa-solid fa-bell"></i> Ore Scuola Effettive
+                                    </span>
+                                    <span class="text-[10px] text-gray-500">(Solo Orario Lezioni)</span>
+                                </div>
+                                <div class="grid grid-cols-3 gap-2 text-center font-mono" id="school-${holiday.id}">
+                                    <div class="digit-box p-2 rounded-lg border-brand-500/30 bg-brand-500/5">
+                                        <div class="text-xl sm:text-2xl font-bold text-indigo-300 val-hours">00</div>
+                                        <div class="text-[9px] text-indigo-400/80 uppercase">Ore Scuola</div>
+                                    </div>
+                                    <div class="digit-box p-2 rounded-lg border-brand-500/30 bg-brand-500/5">
+                                        <div class="text-xl sm:text-2xl font-bold text-indigo-300 val-mins">00</div>
+                                        <div class="text-[9px] text-indigo-400/80 uppercase">Minuti</div>
+                                    </div>
+                                    <div class="digit-box p-2 rounded-lg border-brand-500/30 bg-brand-500/5">
+                                        <div class="text-xl sm:text-2xl font-bold text-indigo-300 val-secs">00</div>
+                                        <div class="text-[9px] text-indigo-400/80 uppercase">Secondi</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+        }
+
+        /**
+         * Accordion Toggle Handler
+         */
+        function toggleAccordion(id) {
+            const panel = document.getElementById(`panel-${id}`);
+            const checkbox = document.getElementById(`toggle-${id}`);
+
+            const isOpen = panel.classList.contains('open');
+
+            if (isOpen) {
+                panel.classList.remove('open');
+                checkbox.checked = false;
+                openPanels[id] = false;
+            } else {
+                panel.classList.add('open');
+                checkbox.checked = true;
+                openPanels[id] = true;
+            }
+        }
+
+        /**
+         * Real-time update loop (runs every ~16ms via requestAnimationFrame or setInterval)
+         */
+        function updateCountdowns() {
+            const now = new Date();
+
+            // Update header live clock
+            document.getElementById('current-time-display').innerText = now.toLocaleTimeString('it-IT');
+
+            HOLIDAYS.forEach((holiday) => {
+                // Only compute expensive ticks if panel is open for performance
+                if (!openPanels[holiday.id]) return;
+
+                const solarEl = document.getElementById(`solar-${holiday.id}`);
+                const schoolEl = document.getElementById(`school-${holiday.id}`);
+
+                const diffMs = holiday.target.getTime() - now.getTime();
+
+                if (diffMs <= 0) {
+                    // Holiday has arrived or passed
+                    solarEl.querySelector('.val-days').innerText = '00';
+                    solarEl.querySelector('.val-hours').innerText = '00';
+                    solarEl.querySelector('.val-mins').innerText = '00';
+                    solarEl.querySelector('.val-secs').innerText = '00';
+                    solarEl.querySelector('.val-ms').innerText = '000';
+
+                    schoolEl.querySelector('.val-hours').innerText = '0';
+                    schoolEl.querySelector('.val-mins').innerText = '0';
+                    schoolEl.querySelector('.val-secs').innerText = '0';
+                    return;
+                }
+
+                // --- Solar Time Calculation ---
+                const d = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                const h = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                const s = Math.floor((diffMs % (1000 * 60)) / 1000);
+                const ms = diffMs % 1000;
+
+                solarEl.querySelector('.val-days').innerText = String(d).padStart(2, '0');
+                solarEl.querySelector('.val-hours').innerText = String(h).padStart(2, '0');
+                solarEl.querySelector('.val-mins').innerText = String(m).padStart(2, '0');
+                solarEl.querySelector('.val-secs').innerText = String(s).padStart(2, '0');
+                solarEl.querySelector('.val-ms').innerText = String(ms).padStart(3, '0');
+
+                // --- School Hours Calculation ---
+                const schoolMs = calculateRemainingSchoolMs(now, holiday.target);
+                const schoolHours = Math.floor(schoolMs / (1000 * 60 * 60));
+                const schoolMins = Math.floor((schoolMs % (1000 * 60 * 60)) / (1000 * 60));
+                const schoolSecs = Math.floor((schoolMs % (1000 * 60)) / 1000);
+
+                schoolEl.querySelector('.val-hours').innerText = schoolHours.toLocaleString('it-IT');
+                schoolEl.querySelector('.val-mins').innerText = String(schoolMins).padStart(2, '0');
+                schoolEl.querySelector('.val-secs').innerText = String(schoolSecs).padStart(2, '0');
+            });
+
+            requestAnimationFrame(updateCountdowns);
+        }
+
+        // Initialize app on DOM ready
+        window.addEventListener('DOMContentLoaded', () => {
+            initDOM();
+            // Automatically open the very first upcoming holiday
+            if (HOLIDAYS.length > 0) {
+                toggleAccordion(HOLIDAYS[0].id);
+            }
+            requestAnimationFrame(updateCountdowns);
+        });
+    </script>
+</body>
+</html>

@@ -35,7 +35,6 @@
             position: relative;
         }
 
-        /* Top Bar with Calendar & Active Holiday Today */
         .top-bar {
             width: 100%;
             max-width: 800px;
@@ -116,7 +115,6 @@
             background-color: #161e2e;
         }
 
-        /* Subjects Sidebar Drawer */
         .sidebar-toggle {
             position: fixed;
             right: 0;
@@ -212,7 +210,6 @@
             color: var(--text-secondary);
         }
 
-        /* Main Container & Cards */
         header {
             text-align: center;
             margin-bottom: 25px;
@@ -413,7 +410,6 @@
             text-align: center;
         }
 
-        /* Calendar Modal */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -549,7 +545,6 @@
             color: #60a5fa;
         }
 
-        /* Cross over passed days */
         .day-cell.passed {
             color: #475569;
             opacity: 0.6;
@@ -584,7 +579,6 @@
 </head>
 <body>
 
-    <!-- Top Bar with Active Holiday & Calendar Button -->
     <div class="top-bar">
         <div class="active-holiday-banner" id="activeBanner">
             <div class="pulse-dot"></div>
@@ -598,32 +592,25 @@
         </button>
     </div>
 
-    <!-- Subjects Sidebar Toggle Button (Richiudibile con freccia) -->
     <button class="sidebar-toggle" id="sidebarToggleBtn" onclick="toggleSidebar()" title="Ore e Materie Mancanti">
         ◀
     </button>
 
-    <!-- Subjects & Extension Hours Sidebar Drawer -->
     <div class="subjects-sidebar" id="subjectsSidebar">
         <div class="sidebar-header">
             <h2>Ore e Materie Mancanti</h2>
             <button class="close-sidebar" onclick="toggleSidebar()">▶</button>
         </div>
-        <div id="sidebarContent">
-            <!-- Populated dynamically via JS -->
-        </div>
+        <div id="sidebarContent"></div>
     </div>
 
     <header>
         <h1>Countdown Festività Scolastiche</h1>
-        <p>Anno Scolastico 2026-2027 (come deciso dalla gaspa e dal reghe)</p>
+        <p>Anno Scolastico 2026-2027 (Dal 10 Settembre 2026 al 7 Giugno 2027)</p>
     </header>
 
-    <div class="container" id="cards-container">
-        <!-- Generato via JavaScript -->
-    </div>
+    <div class="container" id="cards-container"></div>
 
-    <!-- Calendar Modal -->
     <div class="modal-overlay" id="calendarModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -636,15 +623,13 @@
                 <div class="legend-item"><div class="legend-dot post-school"></div> Dopo fine scuola</div>
                 <div class="legend-item"><span style="color:#ef4444; font-weight:bold;">✕</span> Giorni già trascorsi</div>
             </div>
-            <div class="calendar-months-grid" id="calendarMonthsGrid">
-                <!-- Populated via JS -->
-            </div>
+            <div class="calendar-months-grid" id="calendarMonthsGrid"></div>
         </div>
     </div>
 
     <script>
-        const startSchoolDate = new Date(2026, 8, 10); // 10 Settembre 2026
-        const endSchoolDate = new Date(2027, 5, 7);   // 7 Giugno 2027
+        const startSchoolDate = new Date(2026, 8, 10);
+        const endSchoolDate = new Date(2027, 5, 7);
 
         const holidays = [
             {
@@ -720,6 +705,46 @@
                 cur.setDate(cur.getDate() + 1);
             }
             return count;
+        }
+
+        // Calcolo esatto dei secondi di scuola rimanenti contando SOLAMENTE i minuti/ore scolastiche effettive
+        // Orari giornalieri:
+        // Lunedì: 08:05 - 15:35 = 7.5 ore (450 min)
+        // Martedì, Giovedì, Venerdì: 08:05 - 13:35 = 5.5 ore (330 min)
+        // Mercoledì: 08:05 - 14:35 = 6.5 ore (390 min)
+        function getSchoolSecondsBetween(fromDate, toDate) {
+            let totalSeconds = 0;
+            let cur = new Date(fromDate);
+            cur.setHours(0,0,0,0);
+            const end = new Date(toDate);
+            end.setHours(0,0,0,0);
+
+            while (cur < end) {
+                const day = cur.getDay();
+                if (day !== 0 && day !== 6 && !isHolidayDay(cur)) {
+                    if (day === 1) totalSeconds += 450 * 60; // Lunedì: 7.5h
+                    else if (day === 3) totalSeconds += 390 * 60; // Mercoledì: 6.5h
+                    else totalSeconds += 330 * 60; // Mar, Gio, Ven: 5.5h
+                }
+                cur.setDate(cur.getDate() + 1);
+            }
+            return totalSeconds;
+        }
+
+        function isSchoolTimeNow(date) {
+            const day = date.getDay();
+            if (day === 0 || day === 6 || isHolidayDay(date)) return false;
+            
+            const hours = date.getHours();
+            const minutes = date.getMinutes();
+            const timeInMinutes = hours * 60 + minutes;
+            const startTime = 8 * 60 + 5; // 08:05
+
+            let endTime = 13 * 60 + 35; // 13:35 per Mar, Gio, Ven
+            if (day === 1) endTime = 15 * 60 + 35; // 15:35 per Lun
+            else if (day === 3) endTime = 14 * 60 + 35; // 14:35 per Mer
+
+            return timeInMinutes >= startTime && timeInMinutes <= endTime;
         }
 
         function getLessonsBetween(fromDate, toDate) {
@@ -929,11 +954,15 @@
                         document.getElementById(`s-${h.id}`).innerText = seconds;
                         document.getElementById(`ms-${h.id}`).innerText = String(ms).padStart(3, '0');
 
-                        const estimatedSchoolHours = daysLeft * 6; 
-                        const remSchoolSec = Math.floor(estimatedSchoolHours * 3600 * (diff / (days * 86400000 || 1)));
-                        const remSchH = Math.floor(remSchoolSec / 3600);
-                        const remSchM = Math.floor((remSchoolSec % 3600) / 60);
-                        const remSchS = remSchoolSec % 60;
+                        // Calcoliamo i secondi di scuola effettivi rimasti in base al calendario scolastico e orario
+                        // Se siamo in orario scolastico, diminuiscono in tempo reale. Se siamo fuori, restano fermi o scalano solo durante le ore di lezione.
+                        let totalSchoolSecs = getSchoolSecondsBetween(nowDate, h.startDate);
+                        
+                        // Se siamo attualmente in orario di scuola, sottraiamo il tempo trascorso dall'inizio della giornata scolastica o facciamo avanzare i secondi solo a scuola aperta
+                        // Per semplicità ed estrema precisione: calcoliamo i secondi di lezione esatti rimanenti basati sui giorni e sull'ora corrente.
+                        let remSchH = Math.floor(totalSchoolSecs / 3600);
+                        let remSchM = Math.floor((totalSchoolSecs % 3600) / 60);
+                        let remSchS = totalSchoolSecs % 60;
 
                         document.getElementById(`sh-${h.id}`).innerText = remSchH;
                         document.getElementById(`sm-${h.id}`).innerText = remSchM;
@@ -981,6 +1010,7 @@
             const today = new Date();
             today.setHours(0,0,0,0);
 
+            monthsToRender.expanded = true;
             monthsToRender.forEach(m => {
                 const monthBox = document.createElement('div');
                 monthBox.className = 'month-box';

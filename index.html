@@ -187,15 +187,6 @@
             color: var(--text-main);
         }
 
-        .subject-group-title {
-            font-size: 0.75rem;
-            color: var(--accent-orange);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin: 15px 0 8px 0;
-            font-weight: bold;
-        }
-
         .subject-item {
             background-color: var(--card-bg);
             border: 1px solid var(--card-border);
@@ -714,13 +705,6 @@
             }
         ];
 
-        // Definizione orari settimanali delle materie
-        // Lunedì (7.5h): Ita/Sto (2h), Geog (1h), Chimica (1h), Inglese (1h), Diritto (1h), Prolungamento/Lab/Tecn (1.5h)
-        // Martedì (5.5h): Disegno (1h), Inglese (1h), Ita/Sto (1h), Fisica (1h), Matematica (1h.5)
-        // Mercoledì (6.5h): Sc.Terra (1h), Ita/Sto (1h), Chimica (1h), Matematica (1h), Fisica (1h), Tecnol (1.5h - Prolungamento)
-        // Giovedì (5.5h): Diritto (1h), Matematica (1h), Fisica (1h), Applicate (1h), Ita/Sto (1h), IRC (0.5h)
-        // Venerdì (5.5h): Ita/Sto (1h), Sc.Terra (1h), Matematica (1h), Chimica (1h), Inglese (1h), Applicate (0.5h)
-
         function getSchoolDaysBetween(startDate, targetDate) {
             let count = 0;
             let cur = new Date(startDate);
@@ -758,7 +742,6 @@
                 cur.setDate(cur.getDate() + 1);
             }
 
-            // Calcolo materie e ore in base ai giorni rimasti
             const itaSto = (daysCounts[1]*2) + (daysCounts[2]*1) + (daysCounts[3]*1) + (daysCounts[4]*1) + (daysCounts[5]*1);
             const mate = (daysCounts[2]*1) + (daysCounts[3]*1) + (daysCounts[4]*1) + (daysCounts[5]*1);
             const ing = (daysCounts[1]*1) + (daysCounts[2]*1) + (daysCounts[5]*1);
@@ -770,8 +753,8 @@
             return {
                 mon: mondayCount,
                 wed: wednesdayCount,
-                monHours: mondayCount * 2, // 2h di rientro lunedì
-                wedHours: wednesdayCount * 1, // 1h di rientro mercoledì
+                monHours: mondayCount * 2,
+                wedHours: wednesdayCount * 1,
                 totalExtHours: (mondayCount * 2) + (wednesdayCount * 1),
                 subjects: [
                     { name: "Italiano / Storia", count: itaSto, hours: itaSto * 1 },
@@ -789,17 +772,11 @@
             const y = date.getFullYear();
             const m = date.getMonth();
             const d = date.getDate();
-            // Ponte Immacolata
             if (y === 2026 && m === 11 && d === 7) return true;
-            // Natale (24 Dic 2026 - 5 Gen 2027)
             if ((y === 2026 && m === 11 && d >= 24) || (y === 2027 && m === 0 && d <= 5)) return true;
-            // Carnevale (8-10 Feb 2027)
             if (y === 2027 && m === 1 && (d >= 8 && d <= 10)) return true;
-            // Pasqua (25-30 Mar 2027)
             if (y === 2027 && m === 2 && (d >= 25 && d <= 30)) return true;
-            // Aprile (29-30 Apr 2027)
             if (y === 2027 && m === 3 && (d >= 29 && d <= 30)) return true;
-            // Festa Repubblica (2 Giu 2027)
             if (y === 2027 && m === 5 && d === 2) return true;
             return false;
         }
@@ -812,7 +789,6 @@
             const stats = getLessonsBetween(now < startSchoolDate ? startSchoolDate : now, endSchoolDate);
 
             sidebarContent.innerHTML = `
-                <div class="subject-group-title">🔥 RIENTRI POMERIDIANI IN CIMA</div>
                 <div class="subject-item highlight">
                     <div class="subject-name">Rientri del Lunedì</div>
                     <div class="subject-stats">Mancano ${stats.mon} rientri (${stats.monHours} ore pomeridiane)</div>
@@ -821,12 +797,10 @@
                     <div class="subject-name">Rientri del Mercoledì</div>
                     <div class="subject-stats">Mancano ${stats.wed} rientri (${stats.wedHours} ore pomeridiane)</div>
                 </div>
-                <div class="subject-item highlight" style="border-color: var(--accent-glow);">
+                <div class="subject-item highlight" style="border-color: var(--accent-glow); margin-bottom: 20px;">
                     <div class="subject-name">TOTALE ORE DI PROLUNGAMENTO</div>
                     <div class="subject-stats" style="color: var(--accent-glow); font-weight: bold;">${stats.totalExtHours} Ore di prolungamento rimaste</div>
                 </div>
-
-                <div class="subject-group-title">📚 ORE MANCANTI PER MATERIA</div>
             `;
 
             stats.subjects.forEach(sub => {
@@ -955,7 +929,6 @@
                         document.getElementById(`s-${h.id}`).innerText = seconds;
                         document.getElementById(`ms-${h.id}`).innerText = String(ms).padStart(3, '0');
 
-                        // Stima dinamica ore di lezione scolastiche effettive fino a questa festività
                         const estimatedSchoolHours = daysLeft * 6; 
                         const remSchoolSec = Math.floor(estimatedSchoolHours * 3600 * (diff / (days * 86400000 || 1)));
                         const remSchH = Math.floor(remSchoolSec / 3600);
@@ -988,7 +961,6 @@
             }
         }
 
-        // Generazione del Calendario Scolastico completo dall'inizio della scuola (Settembre 2026)
         function generateCalendarMonths() {
             const grid = document.getElementById('calendarMonthsGrid');
             grid.innerHTML = '';
@@ -1042,7 +1014,6 @@
                         classes.push('post-school');
                     }
 
-                    // Segna con una X sopra i giorni passati
                     if (currentDate < today) {
                         classes.push('passed');
                     }
@@ -1068,7 +1039,7 @@
         renderCards();
         generateCalendarMonths();
         setInterval(updateCountdowns, 50);
-        setInterval(renderSubjectsSidebar, 60000); // Aggiorna sidebar ogni minuto col passare del tempo
+        setInterval(renderSubjectsSidebar, 60000);
         updateCountdowns();
     </script>
 </body>

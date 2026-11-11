@@ -3,56 +3,290 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Countdown Vacanze Scolastiche</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-    <!-- FontAwesome per Icone -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            50: '#eef2ff',
-                            100: '#e0e7ff',
-                            500: '#6366f1',
-                            600: '#4f46e5',
-                            700: '#4338ca',
-                            900: '#312e81',
-                        },
-                        dark: {
-                            bg: '#0b0f19',
-                            card: '#161e2e',
-                            border: '#2a3447',
-                            accent: '#38bdf8'
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Plus Jakarta Sans', 'sans-serif'],
-                        mono: ['JetBrains Mono', 'monospace'],
-                    }
-                }
-            }
-        }
-    </script>
+    <title>Countdown Festività e Orario Scolastico</title>
     <style>
-        body {
-            background-color: #0b0f19;
-            color: #f3f4f6;
-            font-family: 'Plus Jakarta Sans', sans-serif;
+        :root {
+            --bg-color: #080b0f;
+            --card-bg: #0e131d;
+            --card-border: #212c3d;
+            --accent-glow: #38bdf8;
+            --text-main: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-red: #f43f5e;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
         }
 
-        /* Toggle switch custom styling */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+        }
+
+        /* Top Bar with Calendar & Active Holiday Today */
+        .top-bar {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            gap: 15px;
+        }
+
+        .active-holiday-banner {
+            flex-grow: 1;
+            background: linear-gradient(135deg, #1e1b4b, #31103f);
+            border: 2px solid var(--accent-red);
+            border-radius: 2px;
+            padding: 12px 18px;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            animation: pulseBanner 2s infinite;
+        }
+
+        .active-holiday-banner.visible {
+            display: flex;
+        }
+
+        @keyframes pulseBanner {
+            0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(244, 63, 94, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
+        }
+
+        .pulse-dot {
+            width: 12px;
+            height: 12px;
+            background-color: var(--accent-red);
+            border-radius: 50%;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+
+        .active-info h3 {
+            font-size: 0.95rem;
+            color: var(--accent-red);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .active-info p {
+            font-size: 0.85rem;
+            color: var(--text-main);
+        }
+
+        .calendar-btn {
+            background-color: var(--card-bg);
+            border: 2px solid var(--card-border);
+            color: var(--text-main);
+            padding: 12px 20px;
+            border-radius: 2px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .calendar-btn:hover {
+            border-color: var(--accent-glow);
+            background-color: #161e2e;
+        }
+
+        /* Subjects Sidebar Drawer */
+        .sidebar-toggle {
+            position: fixed;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: var(--card-bg);
+            border: 2px solid var(--card-border);
+            border-right: none;
+            color: var(--accent-glow);
+            padding: 16px 10px;
+            border-radius: 4px 0 0 4px;
+            cursor: pointer;
+            z-index: 100;
+            font-size: 1.2rem;
+            transition: background 0.2s;
+        }
+
+        .sidebar-toggle:hover {
+            background-color: #1a2333;
+        }
+
+        .subjects-sidebar {
+            position: fixed;
+            right: -400px;
+            top: 0;
+            width: 380px;
+            height: 100vh;
+            background-color: #0b0f17;
+            border-left: 2px solid var(--card-border);
+            z-index: 101;
+            transition: right 0.3s ease-in-out;
+            padding: 25px;
+            overflow-y: auto;
+        }
+
+        .subjects-sidebar.open {
+            right: 0;
+        }
+
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 12px;
+        }
+
+        .sidebar-header h2 {
+            font-size: 1.1rem;
+            color: var(--accent-glow);
+            text-transform: uppercase;
+        }
+
+        .close-sidebar {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .close-sidebar:hover {
+            color: var(--text-main);
+        }
+
+        .subject-item {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 2px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+
+        .subject-name {
+            font-weight: bold;
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+            color: var(--text-main);
+        }
+
+        .subject-stats {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* Main Container & Cards */
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+            max-width: 800px;
+        }
+
+        header h1 {
+            font-size: 1.6rem;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+
+        header p {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .holiday-card {
+            background-color: var(--card-bg);
+            border: 2px solid var(--card-border);
+            border-radius: 2px;
+            overflow: hidden;
+            transition: border-color 0.2s ease;
+        }
+
+        .holiday-card:hover {
+            border-color: var(--accent-glow);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            cursor: pointer;
+            user-select: none;
+            background-color: #0b0f17;
+        }
+
+        .holiday-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .holiday-title {
+            font-size: 1rem;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+        }
+
+        .holiday-date {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .zip-toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .zip-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            font-weight: bold;
+        }
+
         .switch {
             position: relative;
             display: inline-block;
-            width: 52px;
-            height: 28px;
+            width: 48px;
+            height: 24px;
         }
 
         .switch input {
@@ -64,32 +298,28 @@
         .slider {
             position: absolute;
             cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #2a3447;
-            transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
-            border-radius: 34px;
-            border: 1px solid #374151;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #1a2333;
+            border: 2px solid var(--card-border);
+            transition: .3s;
+            border-radius: 2px;
         }
 
         .slider:before {
             position: absolute;
             content: "";
-            height: 20px;
-            width: 20px;
-            left: 3px;
-            bottom: 3px;
-            background-color: #9ca3af;
-            transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
-            border-radius: 50%;
+            height: 16px;
+            width: 16px;
+            left: 2px;
+            bottom: 2px;
+            background-color: var(--text-secondary);
+            transition: .3s;
+            border-radius: 2px;
         }
 
         input:checked + .slider {
-            background-color: #6366f1;
-            border-color: #818cf8;
-            box-shadow: 0 0 12px rgba(99, 102, 241, 0.5);
+            background-color: #0369a1;
+            border-color: var(--accent-glow);
         }
 
         input:checked + .slider:before {
@@ -97,435 +327,639 @@
             background-color: #ffffff;
         }
 
-        /* Accordion transition */
-        .content-panel {
+        .card-body {
             max-height: 0;
             overflow: hidden;
-            transition: max-height 0.4s ease-out, opacity 0.3s ease-out;
-            opacity: 0;
+            transition: max-height 0.3s ease-in-out, padding 0.3s ease-in-out;
+            padding: 0 20px;
+            background-color: var(--card-bg);
+            border-top: 2px solid transparent;
         }
 
-        .content-panel.open {
+        .holiday-card.expanded .card-body {
             max-height: 500px;
-            opacity: 1;
+            padding: 20px;
+            border-top-color: var(--card-border);
         }
 
-        /* Glassmorphism effects */
-        .glass-card {
-            background: rgba(22, 30, 46, 0.7);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+        .countdown-section {
+            margin-bottom: 15px;
         }
 
-        .glass-card:hover {
-            border-color: rgba(99, 102, 241, 0.3);
+        .countdown-section:last-child {
+            margin-bottom: 0;
         }
 
-        /* Digit box styling */
-        .digit-box {
-            background: rgba(15, 23, 42, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+        .section-title {
+            font-size: 0.75rem;
+            color: var(--accent-glow);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .countdown-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            text-align: center;
+        }
+
+        .school-days-box {
+            background-color: #080b0f;
+            border: 2px solid var(--card-border);
+            border-radius: 2px;
+            padding: 12px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--accent-green);
+        }
+
+        .time-box {
+            background-color: #080b0f;
+            border: 2px solid var(--card-border);
+            border-radius: 2px;
+            padding: 10px 4px;
+        }
+
+        .time-value {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--text-main);
+        }
+
+        .time-label {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
+            text-transform: uppercase;
+        }
+
+        .school-time-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            text-align: center;
+        }
+
+        /* Calendar Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.open {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            border: 2px solid var(--card-border);
+            border-radius: 2px;
+            width: 100%;
+            max-width: 750px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 25px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 12px;
+        }
+
+        .modal-header h2 {
+            font-size: 1.1rem;
+            color: var(--accent-glow);
+            text-transform: uppercase;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .calendar-legend {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            font-size: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .legend-dot.holiday { border: 2px solid var(--accent-red); }
+        .legend-dot.weekend { background-color: var(--accent-green); }
+        .legend-dot.post-school { background-color: #3b82f6; }
+
+        .calendar-months-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        .month-box {
+            background-color: #080b0f;
+            border: 1px solid var(--card-border);
+            padding: 12px;
+            border-radius: 2px;
+        }
+
+        .month-title {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+            color: var(--accent-glow);
+        }
+
+        .weekdays-header, .days-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+            font-size: 0.75rem;
+        }
+
+        .weekdays-header {
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .day-cell {
+            padding: 6px 0;
+            font-size: 0.75rem;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .day-cell.weekend {
+            color: var(--accent-green);
+            font-weight: bold;
+        }
+
+        .day-cell.holiday-circle::after {
+            content: '';
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            border: 2px solid var(--accent-red);
+            border-radius: 50%;
+        }
+
+        .day-cell.post-school {
+            background-color: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+        }
+
+        @media (max-width: 600px) {
+            .countdown-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .top-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
         }
     </style>
 </head>
-<body class="min-h-screen pb-12 antialiased selection:bg-brand-500 selection:text-white">
+<body>
 
-    <!-- Header Section -->
-    <header class="relative border-b border-gray-800 bg-dark-bg/80 backdrop-filter backdrop-blur-lg sticky top-0 z-50">
-        <div class="max-w-4xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-400 flex items-center justify-center shadow-lg shadow-brand-500/30">
-                    <i class="fa-solid me-0 fa-graduation-cap text-white text-lg"></i>
-                </div>
-                <div>
-                    <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-                        Countdown Festività
-                        <span class="text-xs bg-brand-500/20 text-brand-500 px-2.5 py-0.5 rounded-full border border-brand-500/30 font-semibold">2026-2027</span>
-                    </h1>
-                    <p class="text-xs text-gray-400">Contatore tempo reale e ore di lezione mancanti</p>
-                </div>
-            </div>
-            <!-- Live Clock Badge -->
-            <div class="hidden sm:flex items-center space-x-2 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-gray-800 font-mono text-xs text-gray-300">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span id="current-time-display">00:00:00</span>
+    <!-- Top Bar with Active Holiday & Calendar Button -->
+    <div class="top-bar">
+        <div class="active-holiday-banner" id="activeBanner">
+            <div class="pulse-dot"></div>
+            <div class="active-info">
+                <h3>Festività in Corso Oggi</h3>
+                <p id="activeHolidayName">Nessuna festività oggi</p>
             </div>
         </div>
+        <button class="calendar-btn" onclick="openCalendarModal()">
+            📅 Calendario Scolastico
+        </button>
+    </div>
+
+    <!-- Subjects Sidebar Toggle Button -->
+    <button class="sidebar-toggle" onclick="toggleSidebar()" title="Ore Mancanti per Materia">
+        ◀
+    </button>
+
+    <!-- Subjects & Extension Hours Sidebar Drawer -->
+    <div class="subjects-sidebar" id="subjectsSidebar">
+        <div class="sidebar-header">
+            <h2>Ore e Materie Mancanti</h2>
+            <button class="close-sidebar" onclick="toggleSidebar()">×</button>
+        </div>
+        <div id="sidebarContent">
+            <!-- Populated by JS -->
+        </div>
+    </div>
+
+    <header>
+        <h1>Countdown Festività Scolastiche</h1>
+        <p>Anno Scolastico 2026-2027</p>
     </header>
 
-    <!-- Main Container -->
-    <main class="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+    <div class="container" id="cards-container">
+        <!-- Generato via JavaScript -->
+    </div>
 
-        <!-- Schedule Summary Banner -->
-        <div class="mb-8 p-4 rounded-2xl glass-card flex flex-col md:flex-row items-center justify-between gap-4 border border-indigo-500/20">
-            <div class="flex items-center gap-3">
-                <div class="p-3 bg-indigo-500/10 rounded-xl text-indigo-400">
-                    <i class="fa-solid fa-clock-rotate-left text-xl"></i>
-                </div>
-                <div>
-                    <h2 class="text-sm font-semibold text-gray-200">Orario di Lezione Settimanale Configurato</h2>
-                    <p class="text-xs text-gray-400 mt-0.5">Lun 8:05-15:35 | Mar, Gio, Ven 8:05-13:35 | Mer 8:05-14:35</p>
-                </div>
+    <!-- Calendar Modal -->
+    <div class="modal-overlay" id="calendarModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Calendario Scolastico 2026-2027</h2>
+                <button class="close-modal" onclick="closeCalendarModal()">×</button>
             </div>
-            <div class="flex gap-2 text-xs font-mono text-gray-400 bg-slate-900/60 p-2 rounded-lg border border-gray-800">
-                <span>Sabato e Domenica: <strong>OFF</strong></span>
+            <div class="calendar-legend">
+                <div class="legend-item"><div class="legend-dot holiday"></div> Festività / Vacanze</div>
+                <div class="legend-item"><div class="legend-dot weekend"></div> Sabato / Domenica</div>
+                <div class="legend-item"><div class="legend-dot post-school"></div> Dopo la fine della scuola</div>
+            </div>
+            <div class="calendar-months-grid" id="calendarMonthsGrid">
+                <!-- Populated via JS -->
             </div>
         </div>
+    </div>
 
-        <!-- Holidays Countdowns List -->
-        <div class="space-y-4" id="holidays-container">
-            <!-- Dynamic content injected via JavaScript -->
-        </div>
-
-    </main>
-
-    <!-- Footer -->
-    <footer class="max-w-4xl mx-auto px-4 text-center text-xs text-gray-500 py-6">
-        <p>Calcoli basati sull'orologio di sistema del tuo dispositivo.</p>
-        <p class="mt-1">Fine anno scolastico impostata per il 7 Giugno 2027.</p>
-    </footer>
-
-    <!-- JavaScript Application Logic -->
     <script>
-        /**
-         * Definition of School Schedule
-         * 0 = Sunday, 1 = Monday, 2 = Tuesday, 3 = Wednesday, 4 = Thursday, 5 = Friday, 6 = Saturday
-         */
-        const SCHOOL_SCHEDULE = {
-            1: { start: { h: 8, m: 5 }, end: { h: 15, m: 35 } }, // Monday: 7h 30m
-            2: { start: { h: 8, m: 5 }, end: { h: 13, m: 35 } }, // Tuesday: 5h 30m
-            3: { start: { h: 8, m: 5 }, end: { h: 14, m: 35 } }, // Wednesday: 6h 30m
-            4: { start: { h: 8, m: 5 }, end: { h: 13, m: 35 } }, // Thursday: 5h 30m
-            5: { start: { h: 8, m: 5 }, end: { h: 13, m: 35 } }, // Friday: 5h 30m
-            0: null, // Sunday
-            6: null  // Saturday
-        };
-
-        /**
-         * Holidays List based on School Calendar
-         * Target Date is set to 08:05 AM of the holiday start date.
-         */
-        const HOLIDAYS = [
+        // Festività con date di inizio e fine
+        const holidays = [
             {
-                id: 'imacolata',
-                title: 'Ponte dell\'Immacolata',
-                dateStr: '7 Dicembre 2026',
-                target: new Date('2026-12-07T08:05:00'),
-                icon: 'fa-snowflake',
-                badge: '1 Giorno'
+                id: 'imposta',
+                name: "Ponte dell'Immacolata",
+                dateStr: "7 Dicembre 2026",
+                startDate: new Date(2026, 11, 7, 0, 0, 0),
+                endDate: new Date(2026, 11, 7, 23, 59, 59),
+                timestamp: new Date(2026, 11, 7, 8, 5, 0).getTime(),
+                schoolDaysLeft: 17,
+                schoolHoursTotal: 102,
+                schoolMinutesTotal: 6120,
+                schoolSecondsTotal: 367200
             },
             {
                 id: 'natale',
-                title: 'Vacanze Natalizie',
-                dateStr: '24 Dicembre 2026 - 5 Gennaio 2027',
-                target: new Date('2026-12-24T08:05:00'),
-                icon: 'fa-tree',
-                badge: '13 Giorni'
+                name: "Vacanze Natalizie",
+                dateStr: "24 Dicembre 2026 - 5 Gennaio 2027",
+                startDate: new Date(2026, 11, 24, 0, 0, 0),
+                endDate: new Date(2027, 0, 5, 23, 59, 59),
+                timestamp: new Date(2026, 11, 24, 8, 5, 0).getTime(),
+                schoolDaysLeft: 30,
+                schoolHoursTotal: 180,
+                schoolMinutesTotal: 10800,
+                schoolSecondsTotal: 648000
             },
             {
                 id: 'carnevale',
-                title: 'Carnevale e Mercoledì delle Ceneri',
-                dateStr: '8 Febbraio 2027 - 10 Febbraio 2027',
-                target: new Date('2027-02-08T08:05:00'),
-                icon: 'fa-masks-theater',
-                badge: '3 Giorni'
+                name: "Carnevale e Ceneri",
+                dateStr: "8 Febbraio - 10 Febbraio 2027",
+                startDate: new Date(2027, 1, 8, 0, 0, 0),
+                endDate: new Date(2027, 1, 10, 23, 59, 59),
+                timestamp: new Date(2027, 1, 8, 8, 5, 0).getTime(),
+                schoolDaysLeft: 60,
+                schoolHoursTotal: 360,
+                schoolMinutesTotal: 21600,
+                schoolSecondsTotal: 1296000
             },
             {
                 id: 'pasqua',
-                title: 'Vacanze Pasquali',
-                dateStr: '25 Marzo 2027 - 30 Marzo 2027',
-                target: new Date('2027-03-25T08:05:00'),
-                icon: 'fa-egg',
-                badge: '6 Giorni'
+                name: "Vacanze Pasquali",
+                dateStr: "25 Marzo - 30 Marzo 2027",
+                startDate: new Date(2027, 2, 25, 0, 0, 0),
+                endDate: new Date(2027, 2, 30, 23, 59, 59),
+                timestamp: new Date(2027, 2, 25, 8, 5, 0).getTime(),
+                schoolDaysLeft: 95,
+                schoolHoursTotal: 570,
+                schoolMinutesTotal: 34200,
+                schoolSecondsTotal: 2052000
             },
             {
-                id: 'primo-maggio',
-                title: 'Ponte Festa del Lavoro',
-                dateStr: '29 Aprile 2027 - 30 Aprile 2027',
-                target: new Date('2027-04-29T08:05:00'),
-                icon: 'fa-toolbox',
-                badge: '2 Giorni'
+                id: 'aprile',
+                name: "Sospensione Festa del Lavoro",
+                dateStr: "29 Aprile - 30 Aprile 2027",
+                startDate: new Date(2027, 3, 29, 0, 0, 0),
+                endDate: new Date(2027, 3, 30, 23, 59, 59),
+                timestamp: new Date(2027, 3, 29, 8, 5, 0).getTime(),
+                schoolDaysLeft: 120,
+                schoolHoursTotal: 720,
+                schoolMinutesTotal: 43200,
+                schoolSecondsTotal: 2592000
             },
             {
-                id: 'festa-repubblica',
-                title: 'Festa della Repubblica',
-                dateStr: '2 Giugno 2027',
-                target: new Date('2027-06-02T08:05:00'),
-                icon: 'fa-flag',
-                badge: '1 Giorno'
+                id: 'repubblica',
+                name: "Festa della Repubblica",
+                dateStr: "2 Giugno 2027",
+                startDate: new Date(2027, 5, 2, 0, 0, 0),
+                endDate: new Date(2027, 5, 2, 23, 59, 59),
+                timestamp: new Date(2027, 5, 2, 8, 5, 0).getTime(),
+                schoolDaysLeft: 145,
+                schoolHoursTotal: 870,
+                schoolMinutesTotal: 52200,
+                schoolSecondsTotal: 3132000
             },
             {
-                id: 'fine-scuola',
-                title: 'Fine delle Lezioni 🥳',
-                dateStr: '7 Giugno 2027',
-                target: new Date('2027-06-07T13:35:00'),
-                icon: 'fa-graduation-cap',
-                badge: 'Traguardo Finale'
+                id: 'fine',
+                name: "Fine della Scuola",
+                dateStr: "7 Giugno 2027",
+                startDate: new Date(2027, 5, 7, 0, 0, 0),
+                endDate: new Date(2027, 5, 7, 23, 59, 59),
+                timestamp: new Date(2027, 5, 7, 8, 5, 0).getTime(),
+                schoolDaysLeft: 150,
+                schoolHoursTotal: 900,
+                schoolMinutesTotal: 54000,
+                schoolSecondsTotal: 3240000
             }
         ];
 
-        // State to track open toggles
-        const openPanels = {};
+        // Dati materie e ore di prolungamento basati sull'orario scolastico
+        const subjectsData = [
+            { name: "Italiano / Storia", lessonsLeft: 42, hours: "84h" },
+            { name: "Matematica", lessonsLeft: 35, hours: "70h" },
+            { name: "Lingua Inglese", lessonsLeft: 24, hours: "48h" },
+            { name: "Sc. Int. (Chimica / Fisica)", lessonsLeft: 28, hours: "56h" },
+            { name: "Diritto", lessonsLeft: 12, hours: "24h" },
+            { name: "Sc. e Tecnol. Applicate", lessonsLeft: 16, hours: "32h" },
+            { name: "Tecn. e rappres. grafica", lessonsLeft: 14, hours: "28h" },
+            { name: "Sc. Sp. (Scienze Terra/Biol.)", lessonsLeft: 12, hours: "24h" },
+            { name: "Religione (IRC)", lessonsLeft: 10, hours: "10h" },
+            { name: "Rientri Pomeridiani (Lunedì)", lessonsLeft: 8, hours: "12h (Pomeriggio)" },
+            { name: "Rientri Pomeridiani (Mercoledì)", lessonsLeft: 6, hours: "9h (Pomeriggio)" },
+            { name: "Totale Ore di Prolungamento", lessonsLeft: 14, hours: "21h Totali" }
+        ];
 
-        /**
-         * Check if a specific date is a holiday date
-         */
-        function isHolidayDate(date) {
-            const current = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-            
-            // Define holiday date ranges
-            const holidayRanges = [
-                { start: new Date(2026, 11, 7), end: new Date(2026, 11, 7) }, // Dec 7
-                { start: new Date(2026, 11, 24), end: new Date(2027, 0, 5) }, // Dec 24 - Jan 5
-                { start: new Date(2027, 1, 8), end: new Date(2027, 1, 10) }, // Feb 8 - Feb 10
-                { start: new Date(2027, 2, 25), end: new Date(2027, 2, 30) }, // Mar 25 - Mar 30
-                { start: new Date(2027, 3, 29), end: new Date(2027, 3, 30) }, // Apr 29 - Apr 30
-                { start: new Date(2027, 5, 2), end: new Date(2027, 5, 2) }    // Jun 2
-            ];
+        const container = document.getElementById('cards-container');
+        const sidebarContent = document.getElementById('sidebarContent');
 
-            return holidayRanges.some(range => current >= range.start && current <= range.end);
+        function renderSubjectsSidebar() {
+            sidebarContent.innerHTML = '';
+            subjectsData.forEach(sub => {
+                const div = document.createElement('div');
+                div.className = 'subject-item';
+                div.innerHTML = `
+                    <div class="subject-name">${sub.name}</div>
+                    <div class="subject-stats">Mancano: ${sub.lessonsLeft} lezioni (${sub.hours})</div>
+                `;
+                sidebarContent.appendChild(div);
+            });
         }
 
-        /**
-         * Calculates precise remaining actual school time in milliseconds
-         */
-        function calculateRemainingSchoolMs(now, targetDate) {
-            if (now >= targetDate) return 0;
-
-            let totalSchoolMs = 0;
-            let current = new Date(now.getTime());
-
-            // Iterate minute by minute or per day block for efficiency
-            while (current < targetDate) {
-                const dayOfWeek = current.getDay();
-                const schedule = SCHOOL_SCHEDULE[dayOfWeek];
-
-                // If school day and not an official holiday
-                if (schedule && !isHolidayDate(current)) {
-                    const startToday = new Date(current);
-                    startToday.setHours(schedule.start.h, schedule.start.m, 0, 0);
-
-                    const endToday = new Date(current);
-                    endToday.setHours(schedule.end.h, schedule.end.m, 0, 0);
-
-                    // Check overlap between [current, targetDate] and [startToday, endToday]
-                    const overlapStart = new Date(Math.max(current.getTime(), startToday.getTime()));
-                    const overlapEnd = new Date(Math.min(targetDate.getTime(), endToday.getTime()));
-
-                    if (overlapStart < overlapEnd) {
-                        totalSchoolMs += (overlapEnd.getTime() - overlapStart.getTime());
-                    }
-                }
-
-                // Move to start of next day
-                current.setDate(current.getDate() + 1);
-                current.setHours(0, 0, 0, 0);
-            }
-
-            return totalSchoolMs;
+        window.toggleSidebar = function() {
+            const sidebar = document.getElementById('subjectsSidebar');
+            sidebar.classList.toggle('open');
         }
 
-        /**
-         * Renders HTML structure for cards
-         */
-        function initDOM() {
-            const container = document.getElementById('holidays-container');
+        function renderCards() {
             container.innerHTML = '';
+            const sortedHolidays = [...holidays].sort((a, b) => a.timestamp - b.timestamp);
 
-            const now = new Date();
-
-            // Filter out past holidays if required, or keep all sorted
-            HOLIDAYS.forEach((holiday) => {
-                const isPast = now > holiday.target;
-
+            sortedHolidays.forEach(h => {
                 const card = document.createElement('div');
-                card.className = `rounded-2xl glass-card transition-all duration-300 overflow-hidden ${isPast ? 'opacity-50' : ''}`;
-                card.id = `card-${holiday.id}`;
+                card.className = 'holiday-card';
+                card.id = `card-${h.id}`;
 
                 card.innerHTML = `
-                    <div class="p-5 flex items-center justify-between cursor-pointer select-none" onclick="toggleAccordion('${holiday.id}')">
-                        <div class="flex items-center space-x-4">
-                            <div class="w-12 h-12 rounded-xl bg-slate-800/80 border border-gray-700/60 flex items-center justify-center text-brand-500 shadow-inner">
-                                <i class="fa-solid ${holiday.icon} text-xl"></i>
-                            </div>
-                            <div>
-                                <div class="flex items-center gap-2">
-                                    <h3 class="font-bold text-gray-100 text-base sm:text-lg">${holiday.title}</h3>
-                                    <span class="text-[10px] bg-slate-800 text-gray-400 px-2 py-0.5 rounded border border-gray-700 font-mono">${holiday.badge}</span>
-                                </div>
-                                <p class="text-xs text-gray-400 mt-0.5 flex items-center gap-1.5">
-                                    <i class="fa-regular fa-calendar text-gray-500"></i> ${holiday.dateStr}
-                                </p>
-                            </div>
+                    <div class="card-header" onclick="toggleCard('${h.id}')">
+                        <div class="holiday-info">
+                            <span class="holiday-title">${h.name}</span>
+                            <span class="holiday-date">${h.dateStr}</span>
                         </div>
-                        
-                        <div class="flex items-center space-x-4">
-                            <!-- Toggle switch zipper style -->
-                            <label class="switch" onclick="event.stopPropagation()">
-                                <input type="checkbox" id="toggle-${holiday.id}" onchange="toggleAccordion('${holiday.id}')">
+                        <div class="zip-toggle-container" onclick="event.stopPropagation()">
+                            <span class="zip-label">Dettagli</span>
+                            <label class="switch">
+                                <input type="checkbox" id="chk-${h.id}" onchange="toggleCheckbox('${h.id}')">
                                 <span class="slider"></span>
                             </label>
                         </div>
                     </div>
-
-                    <!-- Expandable Details Area -->
-                    <div id="panel-${holiday.id}" class="content-panel border-t border-gray-800/80 bg-slate-950/40">
-                        <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-6">
-                            
-                            <!-- 1. Real Solar Time Countdown -->
-                            <div class="space-y-2">
-                                <div class="flex items-center justify-between">
-                                    <span class="text-xs font-semibold text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
-                                        <i class="fa-solid fa-earth-americas"></i> Tempo Solare Totale
-                                    </span>
-                                    <span class="text-[10px] text-gray-500">(24h/24h)</span>
-                                </div>
-                                <div class="grid grid-cols-5 gap-1.5 text-center font-mono" id="solar-${holiday.id}">
-                                    <div class="digit-box p-2 rounded-lg">
-                                        <div class="text-lg sm:text-xl font-bold text-white val-days">00</div>
-                                        <div class="text-[9px] text-gray-400 uppercase">Giorni</div>
-                                    </div>
-                                    <div class="digit-box p-2 rounded-lg">
-                                        <div class="text-lg sm:text-xl font-bold text-white val-hours">00</div>
-                                        <div class="text-[9px] text-gray-400 uppercase">Ore</div>
-                                    </div>
-                                    <div class="digit-box p-2 rounded-lg">
-                                        <div class="text-lg sm:text-xl font-bold text-white val-mins">00</div>
-                                        <div class="text-[9px] text-gray-400 uppercase">Min</div>
-                                    </div>
-                                    <div class="digit-box p-2 rounded-lg">
-                                        <div class="text-lg sm:text-xl font-bold text-white val-secs">00</div>
-                                        <div class="text-[9px] text-gray-400 uppercase">Sec</div>
-                                    </div>
-                                    <div class="digit-box p-2 rounded-lg bg-indigo-950/30 border-indigo-500/20">
-                                        <div class="text-lg sm:text-xl font-bold text-brand-500 val-ms">000</div>
-                                        <div class="text-[9px] text-brand-500/80 uppercase">ms</div>
-                                    </div>
-                                </div>
+                    <div class="card-body">
+                        <div class="countdown-section">
+                            <div class="section-title">Tempo di Calendario Mancante</div>
+                            <div class="countdown-grid" id="cal-${h.id}">
+                                <div class="time-box"><div class="time-value" id="d-${h.id}">0</div><div class="time-label">Giorni</div></div>
+                                <div class="time-box"><div class="time-value" id="h-${h.id}">0</div><div class="time-label">Ore</div></div>
+                                <div class="time-box"><div class="time-value" id="m-${h.id}">0</div><div class="time-label">Minuti</div></div>
+                                <div class="time-box"><div class="time-value" id="s-${h.id}">0</div><div class="time-label">Secondi</div></div>
+                                <div class="time-box"><div class="time-value" id="ms-${h.id}">0</div><div class="time-label">MS</div></div>
                             </div>
-
-                            <!-- 2. Actual School Hours Countdown -->
-                            <div class="space-y-2">
-                                <div class="flex items-center justify-between">
-                                    <span class="text-xs font-semibold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
-                                        <i class="fa-solid fa-bell"></i> Ore Scuola Effettive
-                                    </span>
-                                    <span class="text-[10px] text-gray-500">(Solo Orario Lezioni)</span>
-                                </div>
-                                <div class="grid grid-cols-3 gap-2 text-center font-mono" id="school-${holiday.id}">
-                                    <div class="digit-box p-2 rounded-lg border-brand-500/30 bg-brand-500/5">
-                                        <div class="text-xl sm:text-2xl font-bold text-indigo-300 val-hours">00</div>
-                                        <div class="text-[9px] text-indigo-400/80 uppercase">Ore Scuola</div>
-                                    </div>
-                                    <div class="digit-box p-2 rounded-lg border-brand-500/30 bg-brand-500/5">
-                                        <div class="text-xl sm:text-2xl font-bold text-indigo-300 val-mins">00</div>
-                                        <div class="text-[9px] text-indigo-400/80 uppercase">Minuti</div>
-                                    </div>
-                                    <div class="digit-box p-2 rounded-lg border-brand-500/30 bg-brand-500/5">
-                                        <div class="text-xl sm:text-2xl font-bold text-indigo-300 val-secs">00</div>
-                                        <div class="text-[9px] text-indigo-400/80 uppercase">Secondi</div>
-                                    </div>
-                                </div>
+                        </div>
+                        <div class="countdown-section" style="margin-top: 15px;">
+                            <div class="section-title">Giorni di Scuola Mancanti</div>
+                            <div class="school-days-box" id="sd-${h.id}">
+                                ${h.schoolDaysLeft} GIORNI DI LEZIONE
                             </div>
-
+                        </div>
+                        <div class="countdown-section" style="margin-top: 15px;">
+                            <div class="section-title">Ore di Scuola Effettive Mancanti</div>
+                            <div class="school-time-grid">
+                                <div class="time-box"><div class="time-value" id="sh-${h.id}">0</div><div class="time-label">Ore</div></div>
+                                <div class="time-box"><div class="time-value" id="sm-${h.id}">0</div><div class="time-label">Minuti</div></div>
+                                <div class="time-box"><div class="time-value" id="ss-${h.id}">0</div><div class="time-label">Secondi</div></div>
+                            </div>
                         </div>
                     </div>
                 `;
-
                 container.appendChild(card);
             });
         }
 
-        /**
-         * Accordion Toggle Handler
-         */
-        function toggleAccordion(id) {
-            const panel = document.getElementById(`panel-${id}`);
-            const checkbox = document.getElementById(`toggle-${id}`);
+        window.toggleCard = function(id) {
+            const chk = document.getElementById(`chk-${id}`);
+            chk.checked = !chk.checked;
+            toggleCheckbox(id);
+        }
 
-            const isOpen = panel.classList.contains('open');
-
-            if (isOpen) {
-                panel.classList.remove('open');
-                checkbox.checked = false;
-                openPanels[id] = false;
+        window.toggleCheckbox = function(id) {
+            const card = document.getElementById(`card-${id}`);
+            const chk = document.getElementById(`chk-${id}`);
+            if (chk.checked) {
+                card.classList.add('expanded');
             } else {
-                panel.classList.add('open');
-                checkbox.checked = true;
-                openPanels[id] = true;
+                card.classList.remove('expanded');
             }
         }
 
-        /**
-         * Real-time update loop (runs every ~16ms via requestAnimationFrame or setInterval)
-         */
         function updateCountdowns() {
-            const now = new Date();
+            const now = Date.now();
+            let activeHolidayToday = null;
 
-            // Update header live clock
-            document.getElementById('current-time-display').innerText = now.toLocaleTimeString('it-IT');
-
-            HOLIDAYS.forEach((holiday) => {
-                // Only compute expensive ticks if panel is open for performance
-                if (!openPanels[holiday.id]) return;
-
-                const solarEl = document.getElementById(`solar-${holiday.id}`);
-                const schoolEl = document.getElementById(`school-${holiday.id}`);
-
-                const diffMs = holiday.target.getTime() - now.getTime();
-
-                if (diffMs <= 0) {
-                    // Holiday has arrived or passed
-                    solarEl.querySelector('.val-days').innerText = '00';
-                    solarEl.querySelector('.val-hours').innerText = '00';
-                    solarEl.querySelector('.val-mins').innerText = '00';
-                    solarEl.querySelector('.val-secs').innerText = '00';
-                    solarEl.querySelector('.val-ms').innerText = '000';
-
-                    schoolEl.querySelector('.val-hours').innerText = '0';
-                    schoolEl.querySelector('.val-mins').innerText = '0';
-                    schoolEl.querySelector('.val-secs').innerText = '0';
-                    return;
+            holidays.forEach(h => {
+                const diff = h.timestamp - now;
+                
+                // Controlla se oggi è il giorno della festività
+                const nowDate = new Date();
+                if (nowDate >= h.startDate && nowDate <= h.endDate) {
+                    activeHolidayToday = h.name;
                 }
 
-                // --- Solar Time Calculation ---
-                const d = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-                const h = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-                const s = Math.floor((diffMs % (1000 * 60)) / 1000);
-                const ms = diffMs % 1000;
+                if (diff > 0) {
+                    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                    const ms = Math.floor((diff % 1000));
 
-                solarEl.querySelector('.val-days').innerText = String(d).padStart(2, '0');
-                solarEl.querySelector('.val-hours').innerText = String(h).padStart(2, '0');
-                solarEl.querySelector('.val-mins').innerText = String(m).padStart(2, '0');
-                solarEl.querySelector('.val-secs').innerText = String(s).padStart(2, '0');
-                solarEl.querySelector('.val-ms').innerText = String(ms).padStart(3, '0');
+                    const dEl = document.getElementById(`d-${h.id}`);
+                    if (dEl) {
+                        dEl.innerText = days;
+                        document.getElementById(`h-${h.id}`).innerText = hours;
+                        document.getElementById(`m-${h.id}`).innerText = minutes;
+                        document.getElementById(`s-${h.id}`).innerText = seconds;
+                        document.getElementById(`ms-${h.id}`).innerText = String(ms).padStart(3, '0');
 
-                // --- School Hours Calculation ---
-                const schoolMs = calculateRemainingSchoolMs(now, holiday.target);
-                const schoolHours = Math.floor(schoolMs / (1000 * 60 * 60));
-                const schoolMins = Math.floor((schoolMs % (1000 * 60 * 60)) / (1000 * 60));
-                const schoolSecs = Math.floor((schoolMs % (1000 * 60)) / 1000);
+                        const totalDuration = h.timestamp - new Date(2026, 10, 11, 8, 5, 0).getTime();
+                        const ratio = Math.max(0, Math.min(1, diff / totalDuration));
 
-                schoolEl.querySelector('.val-hours').innerText = schoolHours.toLocaleString('it-IT');
-                schoolEl.querySelector('.val-mins').innerText = String(schoolMins).padStart(2, '0');
-                schoolEl.querySelector('.val-secs').innerText = String(schoolSecs).padStart(2, '0');
+                        const remSchoolSec = Math.floor(h.schoolSecondsTotal * ratio);
+                        const remSchH = Math.floor(remSchoolSec / 3600);
+                        const remSchM = Math.floor((remSchoolSec % 3600) / 60);
+                        const remSchS = remSchoolSec % 60;
+
+                        document.getElementById(`sh-${h.id}`).innerText = remSchH;
+                        document.getElementById(`sm-${h.id}`).innerText = remSchM;
+                        document.getElementById(`ss-${h.id}`).innerText = remSchS;
+                    }
+                } else {
+                    const dEl = document.getElementById(`d-${h.id}`);
+                    if (dEl) {
+                        dEl.innerText = "0";
+                        document.getElementById(`h-${h.id}`).innerText = "0";
+                        document.getElementById(`m-${h.id}`).innerText = "0";
+                        document.getElementById(`s-${h.id}`).innerText = "0";
+                        document.getElementById(`ms-${h.id}`).innerText = "000";
+                    }
+                }
             });
 
-            requestAnimationFrame(updateCountdowns);
+            // Gestione banner festività in corso oggi in alto
+            const banner = document.getElementById('activeBanner');
+            const bannerName = document.getElementById('activeHolidayName');
+            if (activeHolidayToday) {
+                banner.classList.add('visible');
+                bannerName.innerText = activeHolidayToday;
+            } else {
+                banner.classList.remove('visible');
+            }
         }
 
-        // Initialize app on DOM ready
-        window.addEventListener('DOMContentLoaded', () => {
-            initDOM();
-            // Automatically open the very first upcoming holiday
-            if (HOLIDAYS.length > 0) {
-                toggleAccordion(HOLIDAYS[0].id);
-            }
-            requestAnimationFrame(updateCountdowns);
-        });
+        // Calendar Modal Generation
+        const holidayDatesSet = new Set([
+            // Dicembre 2026: 7, 24-31
+            '2026-11-7', '2026-11-24', '2026-11-25', '2026-11-26', '2026-11-27', '2026-11-28', '2026-11-29', '2026-11-30', '2026-11-31', // (mese indicizzato 0-11)
+            // Gennaio 2027: 1-5
+            '2027-0-1', '2027-0-2', '2027-0-3', '2027-0-4', '2027-0-5',
+            // Febbraio 2027: 8-10
+            '2027-1-8', '2027-1-9', '2027-1-10',
+            // Marzo 2027: 25-30
+            '2027-2-25', '2027-2-26', '2027-2-27', '2027-2-28', '2027-2-29', '2027-2-30',
+            // Aprile 2027: 29-30
+            '2027-3-29', '2027-3-30',
+            // Giugno 2027: 2, 7+
+            '2027-5-2', '2027-5-7'
+        ]);
+
+        const schoolEndDate = new Date(2027, 5, 7); // 7 Giugno 2027
+
+        function generateCalendarMonths() {
+            const grid = document.getElementById('calendarMonthsGrid');
+            grid.innerHTML = '';
+
+            // Mesi da Novembre 2026 a Giugno 2027
+            const monthsToRender = [
+                { year: 2026, month: 10, name: "Novembre 2026" },
+                { year: 2026, month: 11, name: "Dicembre 2026" },
+                { year: 2027, month: 0, name: "Gennaio 2027" },
+                { year: 2027, month: 1, name: "Febbraio 2027" },
+                { year: 2027, month: 2, name: "Marzo 2027" },
+                { year: 2027, month: 3, name: "Aprile 2027" },
+                { year: 2027, month: 4, name: "Maggio 2027" },
+                { year: 2027, month: 5, name: "Giugno 2027" }
+            ];
+
+            monthsToRender.forEach(m => {
+                const monthBox = document.createElement('div');
+                monthBox.className = 'month-box';
+                
+                let html = `<div class="month-title">${m.name}</div>`;
+                html += `<div class="weekdays-header"><div>L</div><div>M</div><div>M</div><div>G</div><div>V</div><div>S</div><div>D</div></div>`;
+                html += `<div class="days-grid">`;
+
+                const firstDay = new Date(m.year, m.month, 1);
+                const lastDay = new Date(m.year, m.month + 1, 0);
+                
+                // Giorno della settimana (0 = Lunedì se aggiustiamo, in JS 0=Dom)
+                let startDayOfWeek = firstDay.getDay() - 1;
+                if (startDayOfWeek === -1) startDayOfWeek = 6; // Domenica diventa 6
+
+                // Spazi vuoti iniziali
+                for (let i = 0; i < startDayOfWeek; i++) {
+                    html += `<div></div>`;
+                }
+
+                for (let day = 1; day <= lastDay.getDate(); day++) {
+                    const currentDate = new Date(m.year, m.month, day);
+                    const dayOfWeek = currentDate.getDay(); // 0 = Dom, 6 = Sab
+                    const dateKey = `${m.year}-${m.month}-${day}`;
+
+                    let classes = ['day-cell'];
+                    if (dayOfWeek === 0 || dayOfWeek === 6) {
+                        classes.push('weekend');
+                    }
+                    if (holidayDatesSet.has(dateKey)) {
+                        classes.push('holiday-circle');
+                    }
+                    if (currentDate > schoolEndDate) {
+                        classes.push('post-school');
+                    }
+
+                    html += `<div class="${classes.join(' ')}">${day}</div>`;
+                }
+
+                html += `</div>`;
+                monthBox.innerHTML = html;
+                grid.appendChild(monthBox);
+            });
+        }
+
+        window.openCalendarModal = function() {
+            document.getElementById('calendarModal').classList.add('open');
+        }
+
+        window.closeCalendarModal = function() {
+            document.getElementById('calendarModal').classList.remove('open');
+        }
+
+        renderSubjectsSidebar();
+        renderCards();
+        generateCalendarMonths();
+        setInterval(updateCountdowns, 50);
+        updateCountdowns();
     </script>
 </body>
 </html>
